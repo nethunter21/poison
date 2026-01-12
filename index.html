@@ -6,14 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
   :root {
-    --bg1: #160024;
-    --bg2: #020824;
+    --bg1: #1a0b00;
+    --bg2: #0b0500;
     --bg3: #000000;
-    --neon-cyan: #00f6ff;
-    --neon-violet: #c44dff;
-    --neon-pink: #ff4fa3;
-    --text-main: #f5f5ff;
-    --text-muted: #8f8fb3;
+    --orange-main: #ff8a00;
+    --orange-neon: #ffb347;
+    --orange-deep: #ff5e00;
+    --text-main: #fff7ec;
+    --text-muted: #9a8c7a;
+    --accent-soft: #ffcf70;
   }
 
   * {
@@ -27,7 +28,10 @@
     width: 100%;
     overflow: hidden;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-    background: radial-gradient(circle at top left, var(--bg1), var(--bg2), var(--bg3));
+    background:
+      radial-gradient(circle at top left, rgba(255, 138, 0, 0.28), transparent 55%),
+      radial-gradient(circle at bottom right, rgba(255, 94, 0, 0.25), transparent 55%),
+      linear-gradient(145deg, var(--bg1), var(--bg2), var(--bg3));
     color: var(--text-main);
   }
 
@@ -42,9 +46,6 @@
     height: 100%;
     padding: 10px 10px 8px;
     gap: 8px;
-    background: radial-gradient(circle at top right, rgba(196, 77, 255, 0.18), transparent 55%),
-                radial-gradient(circle at bottom left, rgba(0, 246, 255, 0.12), transparent 50%),
-                linear-gradient(145deg, var(--bg1), var(--bg2), var(--bg3));
   }
 
   .topbar {
@@ -59,16 +60,16 @@
     align-items: center;
     gap: 6px;
     padding: 8px 10px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 999px;
     box-shadow:
-      0 0 0 1px rgba(0, 246, 255, 0.22),
-      0 0 18px rgba(0, 246, 255, 0.18);
-    backdrop-filter: blur(16px);
+      0 0 0 1px rgba(255, 138, 0, 0.45),
+      0 0 18px rgba(255, 138, 0, 0.35);
+    backdrop-filter: blur(12px);
   }
 
   .addr-icon {
-    color: var(--neon-cyan);
+    color: var(--orange-main);
     font-size: 14px;
   }
 
@@ -87,44 +88,64 @@
 
   .go-btn {
     border: none;
-    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-    color: #000;
+    background: linear-gradient(135deg, var(--orange-main), var(--orange-deep));
+    color: #140800;
     font-size: 12px;
     font-weight: 600;
     padding: 6px 10px;
     border-radius: 999px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
+    box-shadow:
+      0 0 12px rgba(255, 138, 0, 0.5),
+      0 0 0 1px rgba(0, 0, 0, 0.7);
   }
 
-  .mode-toggle {
-    padding: 6px 8px;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    text-align: center;
-    min-width: 70px;
+  .poison-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 138, 0, 0.6);
+    box-shadow:
+      0 0 12px rgba(255, 138, 0, 0.5),
+      0 0 0 1px rgba(0, 0, 0, 0.7);
+    cursor: pointer;
   }
 
-  .mode-label {
-    font-size: 9px;
+  .poison-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #555555;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.8);
+    flex-shrink: 0;
+  }
+
+  .poison-circle.active {
+    background: var(--orange-main);
+    box-shadow:
+      0 0 6px rgba(255, 138, 0, 1),
+      0 0 16px rgba(255, 138, 0, 0.95);
+    animation: poisonBlink 1.4s ease-in-out infinite;
+  }
+
+  .poison-text {
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--text-muted);
+    text-shadow: none;
+    white-space: nowrap;
   }
 
-  .mode-value {
-    font-size: 11px;
-    margin-top: 2px;
-  }
-
-  .poison-on {
-    color: var(--neon-pink);
-    text-shadow: 0 0 8px rgba(255, 79, 163, 0.8);
-  }
-
-  .poison-off {
-    color: var(--text-muted);
+  .poison-text.active {
+    color: var(--accent-soft);
+    text-shadow:
+      0 0 8px rgba(255, 138, 0, 0.9),
+      0 0 18px rgba(255, 94, 0, 0.7);
   }
 
   .middle {
@@ -133,26 +154,19 @@
     border-radius: 14px;
     overflow: hidden;
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.08),
-      0 20px 50px rgba(0, 0, 0, 0.7);
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 18px 40px rgba(0, 0, 0, 0.85);
+    background: radial-gradient(circle at top, rgba(255, 138, 0, 0.12), #050200);
   }
 
   iframe {
     width: 100%;
     height: 100%;
     border: none;
-    background: #050510;
+    background: #050200;
   }
 
   .bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .status {
-    flex: 1;
     font-size: 11px;
     color: var(--text-muted);
     display: flex;
@@ -163,108 +177,25 @@
   .status-line {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
   }
 
   .status-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--neon-cyan);
-    box-shadow: 0 0 6px rgba(0, 246, 255, 0.8);
+    background: var(--orange-main);
+    box-shadow: 0 0 6px rgba(255, 138, 0, 0.8);
   }
 
-  .status-text-strong {
+  .status-strong {
     color: var(--text-main);
-    font-size: 11px;
   }
 
-  .status-sub {
-    font-size: 10px;
-  }
-
-  .poison-button-wrapper {
-    width: 76px;
-    height: 76px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .poison-button {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    position: relative;
-    border: none;
-    cursor: pointer;
-    background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.35), transparent 50%),
-                radial-gradient(circle at 70% 80%, rgba(0, 246, 255, 0.3), transparent 55%),
-                #05050a;
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.15),
-      0 0 22px rgba(0, 246, 255, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .poison-button-inner {
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(196, 77, 255, 0.6), rgba(0, 0, 0, 0.9));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .poison-icon {
-    font-size: 24px;
-  }
-
-  .poison-halo {
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 79, 163, 0.6);
-    filter: blur(4px);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .poison-button.on .poison-halo {
-    opacity: 1;
-    animation: haloPulse 2.2s ease-in-out infinite;
-  }
-
-  .poison-button.off .poison-halo {
-    opacity: 0;
-  }
-
-  .poison-caption {
-    font-size: 10px;
-    margin-top: 4px;
-    text-align: center;
-    color: var(--text-muted);
-  }
-
-  .poison-caption.on {
-    color: var(--neon-pink);
-    text-shadow: 0 0 10px rgba(255, 79, 163, 0.6);
-  }
-
-  @keyframes haloPulse {
-    0% { transform: scale(1); opacity: 0.6; }
-    50% { transform: scale(1.12); opacity: 1; }
-    100% { transform: scale(1); opacity: 0.6; }
-  }
-
-  @media (max-width: 600px) {
-    .status {
-      display: none;
-    }
+  @keyframes poisonBlink {
+    0%   { opacity: 0.4; transform: scale(0.9); }
+    50%  { opacity: 1;   transform: scale(1.1); }
+    100% { opacity: 0.4; transform: scale(0.9); }
   }
 </style>
 </head>
@@ -278,38 +209,27 @@
              autocomplete="off" spellcheck="false" />
       <button class="go-btn" id="goButton">GO</button>
     </div>
-    <button class="mode-toggle" id="modeToggle" type="button">
-      <div class="mode-label">MODE</div>
-      <div class="mode-value poison-off" id="modeValue">CLEAN</div>
+
+    <!-- Poison button top-right -->
+    <button class="poison-toggle" id="poisonToggle" type="button">
+      <span class="poison-circle" id="poisonCircle"></span>
+      <span class="poison-text" id="poisonText">Poison</span>
     </button>
   </div>
 
   <div class="middle">
-    <iframe id="view" src="https://duckduckgo.com"></iframe>
+    <iframe id="view" src="https://wikipedia.org"></iframe>
   </div>
 
   <div class="bottom">
-    <div class="status">
-      <div class="status-line">
-        <div class="status-dot"></div>
-        <div class="status-text-strong" id="statusPrimary">Ephemeral session</div>
-      </div>
-      <div class="status-sub" id="statusSecondary">
-        No history. Neutral semantic noise only.
+    <div class="status-line">
+      <div class="status-dot"></div>
+      <div class="status-strong" id="statusPrimary">
+        Ephemeral session
       </div>
     </div>
-    <div class="poison-button-wrapper">
-      <div>
-        <button id="poisonButton" class="poison-button off" type="button">
-          <div class="poison-button-inner">
-            <div class="poison-halo"></div>
-            <span class="poison-icon" id="poisonIcon">☠︎</span>
-          </div>
-        </button>
-        <div id="poisonCaption" class="poison-caption">
-          Clean signals.
-        </div>
-      </div>
+    <div id="statusSecondary">
+      No history. Poison only affects JS & scroll noise where allowed.
     </div>
   </div>
 </div>
@@ -319,11 +239,10 @@
   const iframe = document.getElementById('view');
   const addrInput = document.getElementById('addressInput');
   const goButton = document.getElementById('goButton');
-  const poisonButton = document.getElementById('poisonButton');
-  const poisonIcon = document.getElementById('poisonIcon');
-  const poisonCaption = document.getElementById('poisonCaption');
-  const modeToggle = document.getElementById('modeToggle');
-  const modeValue = document.getElementById('modeValue');
+
+  const poisonToggle = document.getElementById('poisonToggle');
+  const poisonCircle = document.getElementById('poisonCircle');
+  const poisonText = document.getElementById('poisonText');
   const statusPrimary = document.getElementById('statusPrimary');
   const statusSecondary = document.getElementById('statusSecondary');
 
@@ -340,14 +259,19 @@
   function normalizeURL(input) {
     input = input.trim();
     if (!input) return null;
+
+    // If it already looks like URL with scheme.
     if (/^https?:\/\//i.test(input)) {
       return input;
     }
+
+    // If it looks like a domain.
     if (input.includes('.') && !input.includes(' ')) {
       return 'https://' + input;
     }
-    const enc = encodeURIComponent(input);
-    return 'https://duckduckgo.com/?q=' + enc;
+
+    // Otherwise, treat as search query with DuckDuckGo (may or may not show in iframe).
+    return 'https://duckduckgo.com/?q=' + encodeURIComponent(input);
   }
 
   function navigate() {
@@ -361,47 +285,31 @@
     if (e.key === 'Enter') navigate();
   });
 
-  // --- POISON MODE TOGGLE ---
-
+  // Poison toggle behavior
   function setPoisonState(on) {
     poisonOn = on;
+
     if (on) {
-      poisonButton.classList.remove('off');
-      poisonButton.classList.add('on');
-      poisonIcon.textContent = '☣︎';
-      poisonCaption.textContent = 'Poisoning tracking signals…';
-      poisonCaption.classList.add('on');
-
-      modeValue.textContent = 'POISON';
-      modeValue.classList.remove('poison-off');
-      modeValue.classList.add('poison-on');
+      poisonCircle.classList.add('active');
+      poisonText.classList.add('active');
+      poisonText.textContent = 'Poisoning';
       statusPrimary.textContent = 'Ephemeral + noisy session';
-      statusSecondary.textContent = 'Neutral background noise. No history saved.';
-
+      statusSecondary.textContent = 'Some JS hints & scroll noise may be altered.';
       installNoise();
       injectPoisonIntoIframe();
     } else {
-      poisonButton.classList.remove('on');
-      poisonButton.classList.add('off');
-      poisonIcon.textContent = '☠︎';
-      poisonCaption.textContent = 'Clean signals.';
-      poisonCaption.classList.remove('on');
-
-      modeValue.textContent = 'CLEAN';
-      modeValue.classList.remove('poison-on');
-      modeValue.classList.add('poison-off');
+      poisonCircle.classList.remove('active');
+      poisonText.classList.remove('active');
+      poisonText.textContent = 'Poison';
       statusPrimary.textContent = 'Ephemeral session';
-      statusSecondary.textContent = 'No history. Neutral semantic noise only.';
-
+      statusSecondary.textContent = 'No history. Poison only when activated.';
       clearNoise();
     }
   }
 
-  poisonButton.addEventListener('click', () => setPoisonState(!poisonOn));
-  modeToggle.addEventListener('click', () => setPoisonState(!poisonOn));
+  poisonToggle.addEventListener('click', () => setPoisonState(!poisonOn));
 
-  // --- NOISE ENGINE (very lightweight, iframe-only) ---
-
+  // Lightweight noise: iframe-only scroll nudge
   function installNoise() {
     clearNoise();
     noiseInterval = setInterval(() => {
@@ -411,18 +319,19 @@
         const doc = iframe.contentDocument || (win && win.document);
         if (!win || !doc) return;
 
-        // Tiny scroll nudges that should not fight user scroll.
         const body = doc.scrollingElement || doc.body;
         if (!body) return;
+
         const maxScroll = body.scrollHeight - body.clientHeight;
         if (maxScroll <= 0) return;
-        const delta = (Math.random() - 0.5) * 40; // +/- 40px
+
+        const delta = (Math.random() - 0.5) * 40;
         let target = win.scrollY + delta;
         if (target < 0) target = 0;
         if (target > maxScroll) target = maxScroll;
         win.scrollTo({ top: target, behavior: 'smooth' });
       } catch (e) {
-        // Cross-origin iframe: cannot access; ignore.
+        // cross-origin, ignore
       }
     }, 5000 + Math.random() * 5000);
   }
@@ -434,8 +343,7 @@
     }
   }
 
-  // --- "Fingerprint-ish" JS tweaks INSIDE iframe (same-origin only!) ---
-
+  // JS tweaks inside iframe when allowed (same-origin only)
   function injectPoisonIntoIframe() {
     const lang = randomChoice(languagePool);
     const tz = randomChoice(tzPool);
@@ -464,18 +372,16 @@
       `;
       (doc.head || doc.documentElement).appendChild(script);
     } catch (e) {
-      // Cross-origin; cannot inject.
+      // cross-origin, ignore
     }
   }
 
   iframe.addEventListener('load', () => {
-    if (poisonOn) {
-      injectPoisonIntoIframe();
-    }
+    if (poisonOn) injectPoisonIntoIframe();
   });
 
-  // Pre-fill address field with default.
-  addrInput.value = 'https://duckduckgo.com';
+  // Prefill
+  addrInput.value = 'https://wikipedia.org';
 })();
 </script>
 </body>
