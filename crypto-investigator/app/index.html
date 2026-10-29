@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChainSight Academy</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="ringgrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38e1ff"/><stop offset=".5" stop-color="#8f5bff"/><stop offset="1" stop-color="#ff3dbb"/>
+    </linearGradient>
+    <symbol id="logo" viewBox="0 0 64 64">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38e1ff"/><stop offset=".55" stop-color="#8f5bff"/><stop offset="1" stop-color="#ff3dbb"/></linearGradient></defs>
+      <path d="M32 3l25 14.5v29L32 61 7 46.5v-29z" fill="none" stroke="url(#lg)" stroke-width="3"/>
+      <circle cx="32" cy="32" r="9" fill="none" stroke="url(#lg)" stroke-width="3"/>
+      <path d="M32 3v20M57 17.5L40 27M57 46.5L40 37M32 61V41M7 46.5L24 37M7 17.5L24 27" stroke="url(#lg)" stroke-width="2" opacity=".75"/>
+      <circle cx="32" cy="32" r="3" fill="#38e1ff"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="boot">
+  <div class="boot-in">
+    <div class="boot-logo">
+      <svg><use href="#logo"/></svg>
+      <div><h1 data-t="CHAINSIGHT">CHAINSIGHT</h1><small>INVESTIGATOR ACADEMY</small></div>
+    </div>
+    <div class="boot-term" id="bootTerm"></div>
+    <div class="boot-bar"><i id="bootBar"></i></div>
+    <div class="boot-skip">CLICK OR PRESS ANY KEY TO SKIP</div>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+<div class="aurora"><i></i><i></i><i></i></div>
+<div class="scan"></div>
+<div class="cursor-glow" id="cglow"></div>
+
+<div class="app">
+  <header class="titlebar">
+    <svg class="tb-logo"><use href="#logo"/></svg>
+    <span class="tb-name">CHAINSIGHT ACADEMY</span>
+    <span class="tb-sub">// CRYPTO INVESTIGATOR TRAINING</span>
+    <button class="tb-search" id="openCmd">⌕ Search lessons, labs, terms… <kbd>Ctrl K</kbd></button>
+    <div class="win-ctrl" id="winCtrl">
+      <button id="wMin" title="Minimize"><svg viewBox="0 0 10 10"><path d="M0 5h10"/></svg></button>
+      <button id="wMax" title="Maximize"><svg viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9"/></svg></button>
+      <button id="wClose" class="x" title="Close"><svg viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10"/></svg></button>
+    </div>
+  </header>
+  <div class="body">
+    <nav class="side" id="side"></nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script src="js/graph.js"></script>
+<script src="js/models.js"></script>
+<script src="js/course.js"></script>
+<script src="js/labs.js"></script>
+<script src="js/widgets.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

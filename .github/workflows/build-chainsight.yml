@@ -1,0 +1,25 @@
+name: Build ChainSight Academy (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['chainsight-v*']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: crypto-investigator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci || npm install
+      - run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChainSight-Academy-Windows
+          path: |
+            crypto-investigator/dist/*.exe
