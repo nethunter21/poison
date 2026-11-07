@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Poison Wallet Tracker</title>
+<meta name="theme-color" content="#07080b" />
+<style>
+:root{
+  --bg:#07080b; --panel:#0e1015; --panel2:#13161d; --line:#1d212b; --line2:#272c38;
+  --text:#e8ecf3; --muted:#7c8597; --dim:#4d5464;
+  --green:#19e68c; --green-bg:rgba(25,230,140,.10);
+  --red:#ff4d6a;  --red-bg:rgba(255,77,106,.10);
+  --amber:#ffb547; --amber-bg:rgba(255,181,71,.10);
+  --blue:#5aa9ff; --blue-bg:rgba(90,169,255,.10);
+  --orange:#ff8a00;
+  --mono:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font:13px/1.4 system-ui,-apple-system,"Segoe UI",Inter,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:inherit;text-decoration:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .dim{color:var(--dim)}
+.g{color:var(--green)} .r{color:var(--red)} .a{color:var(--amber)} .b{color:var(--blue)}
+
+/* ---------- header ---------- */
+header{height:54px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0b0d12,#07080b)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.brand .logo{width:24px;height:24px;border-radius:7px;background:conic-gradient(from 200deg,var(--orange),#ff3d00,var(--orange));box-shadow:0 0 18px rgba(255,138,0,.45)}
+.brand small{color:var(--muted);font-weight:500}
+.hstat{display:flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);white-space:nowrap;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex:none}
+.dot.on{background:var(--green);box-shadow:0 0 0 0 rgba(25,230,140,.6);animation:pulse 1.6s infinite}
+.dot.warn{background:var(--amber)} .dot.off{background:var(--red)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(25,230,140,.55)}70%{box-shadow:0 0 0 7px rgba(25,230,140,0)}100%{box-shadow:0 0 0 0 rgba(25,230,140,0)}}
+.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--panel2);font-size:12px;font-weight:600;white-space:nowrap;transition:border-color .15s,background .15s}
+.btn:hover{border-color:#3a4150;background:#181c25}
+.btn.pri{background:var(--green);color:#03140b;border-color:transparent}
+.btn.pri:hover{background:#3ff0a2}
+.btn.on{border-color:rgba(25,230,140,.5);color:var(--green)}
+.btn.sm{padding:4px 8px;font-size:11px;border-radius:7px}
+.btn.demo.on{border-color:rgba(255,181,71,.55);color:var(--amber)}
+
+/* ---------- layout ---------- */
+main{display:grid;grid-template-columns:290px minmax(0,1fr) 390px;height:calc(100% - 54px)}
+.panel{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+.panel:last-child{border-right:0}
+.ph{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:650;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ph .count{font-family:var(--mono);color:var(--text);background:var(--panel2);border:1px solid var(--line2);padding:1px 7px;border-radius:999px;font-size:11px;letter-spacing:0}
+.scroll{overflow-y:auto;min-height:0;flex:1}
+.scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:#1e232d;border-radius:8px}
+
+/* ---------- wallets ---------- */
+.add{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.inp{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line2);background:#0a0c10;outline:none;font-size:12.5px}
+.inp:focus{border-color:#3d4556}
+.row{display:flex;gap:8px}
+.chips{display:flex;gap:6px;padding:10px 14px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.chip{padding:4px 10px;border-radius:999px;border:1px solid var(--line2);font-size:11.5px;color:var(--muted);background:var(--panel)}
+.chip.on{color:var(--text);border-color:#4a5263;background:var(--panel2)}
+.wallet{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
+.wallet:hover{background:#0c0e13}
+.wallet.flash{animation:wflash 1.2s ease-out}
+@keyframes wflash{from{background:rgba(25,230,140,.14)}to{background:transparent}}
+.av{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#06070a;flex:none}
+.wmeta{min-width:0;flex:1}
+.wname{display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wsub{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.tag{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:5px;flex:none}
+.tag.Insider{background:rgba(255,138,0,.13);color:#ffa940}
+.tag.Trader{background:var(--blue-bg);color:var(--blue)}
+.tag.KOL{background:rgba(196,120,255,.13);color:#c478ff}
+.tag.Whale{background:rgba(25,230,200,.12);color:#19e6c8}
+.wright{text-align:right;font-size:11.5px}
+.empty{padding:28px 18px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
+
+/* ---------- center ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.kpi .v{font-size:20px;font-weight:700;margin-top:2px}
+.feedbar{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.trade{display:grid;grid-template-columns:54px 128px 54px minmax(0,1fr) 100px 76px 64px;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);font-size:12.5px}
+.trade.new{animation:tin .5s ease-out}
+.trade.BUY.new{animation:tinb 1.4s ease-out}
+.trade.SELL.new{animation:tins 1.4s ease-out}
+@keyframes tinb{from{background:rgba(25,230,140,.16)}to{background:transparent}}
+@keyframes tins{from{background:rgba(255,77,106,.14)}to{background:transparent}}
+@keyframes tin{from{opacity:0;transform:translateY(-4px)}}
+.side{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-align:center;padding:3px 0;border-radius:6px}
+.side.BUY{background:var(--green-bg);color:var(--green)}
+.side.SELL{background:var(--red-bg);color:var(--red)}
+.side.SWAP,.side.IN,.side.OUT{background:var(--blue-bg);color:var(--blue)}
+.tok{display:flex;align-items:center;gap:8px;min-width:0}
+.tok img,.tok .ph-img{width:22px;height:22px;border-radius:50%;flex:none;background:var(--panel2);object-fit:cover}
+.tok b{white-space:nowrap;flex:none;max-width:70%;overflow:hidden;text-overflow:ellipsis}
+.tok .px{min-width:0;overflow:hidden;white-space:nowrap;font-size:11px}
+.links{display:flex;gap:4px;justify-content:flex-end}
+.lk{font-size:10.5px;padding:3px 6px;border-radius:6px;border:1px solid var(--line2);color:var(--muted)}
+.lk:hover{color:var(--text);border-color:#3d4556}
+.thead{color:var(--dim);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;padding:7px 14px}
+
+/* ---------- signals ---------- */
+.sig{margin:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;transition:border-color .2s}
+.sig.ENTER{border-color:rgba(25,230,140,.55);box-shadow:0 0 0 1px rgba(25,230,140,.15),0 8px 30px rgba(25,230,140,.08)}
+.sig.LATE,.sig.WATCH{border-color:rgba(255,181,71,.30)}
+.sig.AVOID,.sig.EXITED,.sig.DUMPING{opacity:.72}
+.sig .top{display:flex;align-items:center;gap:10px;padding:11px 12px 8px}
+.sig .top img,.sig .top .ph-img{width:34px;height:34px;border-radius:50%;background:var(--panel2);object-fit:cover;flex:none}
+.sig .name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.state{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.08em;padding:5px 9px;border-radius:7px;white-space:nowrap}
+.state.ENTER{background:var(--green);color:#03140b;animation:glow 1.4s infinite}
+@keyframes glow{50%{box-shadow:0 0 16px rgba(25,230,140,.7)}}
+.state.WATCH{background:var(--blue-bg);color:var(--blue)}
+.state.LATE{background:var(--amber-bg);color:var(--amber)}
+.state.AVOID,.state.EXITED,.state.DUMPING,.state.EXPIRED{background:var(--red-bg);color:var(--red)}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.sgrid div{background:var(--panel);padding:7px 9px}
+.sgrid .l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.sgrid .v{font-family:var(--mono);font-size:12.5px;font-weight:600;margin-top:1px}
+.spark{display:block;width:100%;height:46px}
+.meter{height:5px;background:var(--line);border-radius:5px;overflow:hidden;margin:0 12px}
+.meter i{display:block;height:100%;border-radius:5px;transition:width .4s}
+.reasons{padding:8px 12px;display:grid;gap:3px;font-size:11.5px}
+.reasons div{display:flex;gap:7px}
+.who{padding:0 12px 8px;display:flex;flex-wrap:wrap;gap:5px}
+.who span{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--panel2);border:1px solid var(--line2)}
+.who span.sold{text-decoration:line-through;color:var(--red)}
+.sact{display:flex;gap:6px;padding:0 12px 12px}
+.sact .btn{flex:1;justify-content:center}
+
+/* ---------- drawer / modal ---------- */
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);display:none;z-index:40}
+.veil.open{display:block}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(560px,100%);background:var(--bg);border-left:1px solid var(--line2);z-index:41;transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.dh{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--line)}
+.dbody{padding:16px;overflow-y:auto;flex:1;display:grid;gap:16px;align-content:start}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h4{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:650}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{color:var(--dim);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+td{padding:7px 4px;border-bottom:1px solid var(--line)}
+td.n,th.n{text-align:right;font-family:var(--mono)}
+.form{display:grid;gap:12px}
+.form label{display:grid;gap:5px;font-size:12px;color:var(--muted)}
+.form .hint{font-size:11px;color:var(--dim)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle{display:flex!important;grid-template-columns:none!important;align-items:center;gap:9px;color:var(--text)!important}
+.toggle input{accent-color:var(--green);width:16px;height:16px}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;right:16px;bottom:16px;display:grid;gap:8px;z-index:60;width:min(440px,calc(100% - 24px));pointer-events:none}
+.toast{pointer-events:auto;display:flex;gap:10px;align-items:center;padding:11px 13px;border-radius:12px;background:#11141b;border:1px solid var(--line2);box-shadow:0 12px 36px rgba(0,0,0,.6);animation:tin .25s ease-out;cursor:pointer}
+.toast.ENTER{border-color:rgba(25,230,140,.6)}
+.toast.SELL{border-color:rgba(255,77,106,.5)}
+.toast .t1{font-weight:700}
+.toast .t2{font-size:11.5px;color:var(--muted)}
+
+/* ---------- mobile ---------- */
+.tabs{display:none}
+@media (max-width:1180px){ main{grid-template-columns:260px minmax(0,1fr) 340px} .trade{grid-template-columns:54px 120px 52px minmax(0,1fr) 96px 80px} .trade .links{display:none} }
+@media (max-width:900px){
+  header{gap:8px;padding:0 10px} .hide-m{display:none!important}
+  main{display:block;height:calc(100% - 54px - 58px)}
+  .panel{height:100%;display:none;border:0} .panel.show{display:flex}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .trade{grid-template-columns:44px 50px minmax(0,1fr) 84px;gap:8px;padding:9px 12px}
+  .trade .c-wallet,.trade .c-mc,.trade .links{display:none}
+  .thead{display:none}
+  .tabs{display:flex;position:fixed;bottom:0;left:0;right:0;height:58px;border-top:1px solid var(--line);background:#0a0b0f;z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+  .tabs button{flex:1;font-size:11.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;justify-content:center}
+  #toasts{right:auto;left:50%;transform:translateX(-50%);bottom:auto;top:62px}
+  .tabs button.on{color:var(--green)}
+  .tabs .bdg{font-family:var(--mono);font-size:10px;background:var(--green);color:#03140b;border-radius:999px;padding:0 6px;margin-left:4px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo"></div>POISON <small class="hide-m">wallet radar</small></div>
+  <div class="hstat" id="connStat" title="Live connection to Solana"><span class="dot" id="connDot"></span><span id="connTxt">Offline</span></div>
+  <div class="hstat hide-m num" title="SOL price">◎ <span id="solPx">—</span></div>
+  <div class="hstat hide-m num" title="Average time from on-chain confirmation to alert">⚡ <span id="lat">—</span></div>
+  <div class="spacer"></div>
+  <button class="btn demo hide-m" id="demoBtn" title="Simulated trades to preview the app">Demo</button>
+  <button class="btn" id="soundBtn" title="Sound alerts">🔊</button>
+  <button class="btn" id="notifBtn">🔔 <span class="hide-m">Enable alerts</span></button>
+  <button class="btn" id="setBtn">⚙ <span class="hide-m">Settings</span></button>
+</header>
+
+<main>
+  <!-- wallets -->
+  <section class="panel show" id="pWallets">
+    <div class="ph">Watchlist <span class="count" id="wCount">0</span><span class="spacer"></span><button class="btn sm" id="ioBtn">Import / Export</button></div>
+    <form class="add" id="addForm" autocomplete="off">
+      <input class="inp num" id="addAddr" placeholder="Solana wallet address" spellcheck="false" />
+      <div class="row">
+        <input class="inp" id="addLabel" placeholder="Label (e.g. Cupsey)" maxlength="24" />
+        <select class="inp" id="addTag" style="width:110px">
+          <option>Insider</option><option>Trader</option><option>KOL</option><option>Whale</option>
+        </select>
+      </div>
+      <button class="btn pri" type="submit" style="justify-content:center">+ Track wallet</button>
+    </form>
+    <div class="chips" id="tagChips"></div>
+    <div class="scroll" id="wList"></div>
+  </section>
+
+  <!-- feed -->
+  <section class="panel" id="pFeed">
+    <div class="kpis">
+      <div class="kpi"><div class="l">Tracked</div><div class="v num" id="kW">0</div></div>
+      <div class="kpi"><div class="l">Buys · 1h</div><div class="v num g" id="kB">0</div></div>
+      <div class="kpi"><div class="l">Sells · 1h</div><div class="v num r" id="kS">0</div></div>
+      <div class="kpi"><div class="l">Entry signals</div><div class="v num" id="kE">0</div></div>
+    </div>
+    <div class="feedbar">
+      <button class="chip on" data-f="ALL">All</button>
+      <button class="chip" data-f="BUY">Buys</button>
+      <button class="chip" data-f="SELL">Sells</button>
+      <span class="spacer"></span>
+      <span class="muted" style="font-size:11.5px">Live feed</span>
+    </div>
+    <div class="trade thead"><span>Time</span><span class="c-wallet">Wallet</span><span>Side</span><span>Token</span><span style="text-align:right">Size</span><span class="c-mc" style="text-align:right">MCap</span><span></span></div>
+    <div class="scroll" id="feed"></div>
+  </section>
+
+  <!-- signals -->
+  <section class="panel" id="pSignals">
+    <div class="ph">Entry signals <span class="count" id="sCount">0</span><span class="spacer"></span><span class="dim" style="text-transform:none;letter-spacing:0;font-weight:500" id="tickInfo"></span></div>
+    <div class="scroll" id="sigs"></div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-p="pWallets" class="on">👛 Wallets</button>
+  <button data-p="pFeed">⚡ Feed</button>
+  <button data-p="pSignals">🎯 Signals<span class="bdg" id="tabBadge" hidden>0</span></button>
+</nav>
+
+<div class="veil" id="veil"></div>
+<aside class="drawer" id="drawer"><div class="dh" id="dHead"></div><div class="dbody" id="dBody"></div></aside>
+<div id="toasts"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   Constants & state
+   ===================================================================== */
+const WSOL = 'So11111111111111111111111111111111111111112';
+const USD_MINTS = new Set(['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v','Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB']);
+const COLORS = ['#19e68c','#5aa9ff','#ffb547','#ff6ad5','#c478ff','#19e6c8','#ff8a00','#ff4d6a','#a3e635','#38bdf8'];
+const TAGS = ['Insider','Trader','KOL','Whale'];
+const FEED_MAX_DOM = 200, TRADES_MAX = 3000, LIVE_AGE_S = 150;
+
+const DEFAULTS = {
+  rpcHttp: 'https://api.mainnet-beta.solana.com',
+  rpcWs: '',
+  maxDrift: 15,       // % above insider entry still considered a good entry
+  maxDip: -25,        // % below insider entry => treated as dumping
+  minLiq: 10000,      // USD
+  minMcap: 0, maxMcap: 0,
+  minBuySol: 0.1,     // ignore dust buys
+  threshold: 60,      // score needed for ENTER
+  windowMin: 20,      // how long a signal stays live
+  pollSec: 3,         // market refresh
+  backfill: 25,       // past txs to load when a wallet is added
+  link: 'dexscreener',
+  nBuy: true, nSell: true, nEnter: true, sound: true,
+};
+const LINKS = {
+  dexscreener: m => `https://dexscreener.com/solana/${m}`,
+  gmgn:        m => `https://gmgn.ai/sol/token/${m}`,
+  jupiter:     m => `https://jup.ag/swap/SOL-${m}`,
+  birdeye:     m => `https://birdeye.so/token/${m}?chain=solana`,
+  photon:      m => `https://photon-sol.tinyastro.io/en/lp/${m}`,
+  bullx:       m => `https://neo.bullx.io/terminal?chainId=1399811149&address=${m}`,
+};
+
+const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
+const S = {
+  wallets: load('pt.wallets', []),
+  trades:  load('pt.trades', []),
+  set:     Object.assign({}, DEFAULTS, load('pt.settings', {})),
+  tokens:  {},                 // mint -> market meta
+  signals: new Map(),          // mint -> signal
+  seen:    new Set(),          // signatures processed
+  solUsd:  load('pt.solUsd', 0),
+  demo:    false,
+  tagFilter: 'ALL', feedFilter: 'ALL',
+  lat: [],
+};
+S.trades.forEach(t => S.seen.add(t.sig + t.wallet));
+
+let saveT;
+function save() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    try {
+      localStorage.setItem('pt.wallets', JSON.stringify(S.wallets.filter(w => !w.demo)));
+      localStorage.setItem('pt.trades', JSON.stringify(S.trades.filter(t => !t.demo).slice(0, TRADES_MAX)));
+      localStorage.setItem('pt.settings', JSON.stringify(S.set));
+      localStorage.setItem('pt.solUsd', JSON.stringify(S.solUsd));
+    } catch {}
+  }, 400);
+}
+
+/* =====================================================================
+   Helpers
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const short = a => a ? a.slice(0, 4) + '…' + a.slice(-4) : '';
+const isAddr = a => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+const now = () => Date.now();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function fmtUsd(v) {
+  if (v == null || !isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a >= 1e9) return '$' + (v/1e9).toFixed(2) + 'B';
+  if (a >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+  if (a >= 1e3) return '$' + (v/1e3).toFixed(1) + 'K';
+  return '$' + v.toFixed(a >= 10 ? 0 : 2);
+}
+function fmtPx(p) {
+  if (p == null || !isFinite(p) || p <= 0) return '—';
+  if (p >= 1) return '$' + p.toFixed(4);
+  const s = p.toFixed(20); const m = s.match(/^0\.(0*)(\d{1,4})/);
+  if (!m) return '$' + p.toPrecision(4);
+  const z = m[1].length;
+  return z >= 4 ? `$0.0<sub>${z}</sub>${m[2]}` : '$' + p.toPrecision(4).replace(/0+$/,'');
+}
+const fmtSol = v => (v == null || !isFinite(v)) ? '—' : (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 1 ? v.toFixed(2) : v.toFixed(3)) + ' ◎';
+const fmtPct = v => (v == null || !isFinite(v)) ? '—' : (v > 0 ? '+' : '') + v.toFixed(Math.abs(v) >= 100 ? 0 : 1) + '%';
+function ago(ts) {
+  const s = Math.max(0, Math.round((now() - ts) / 1000));
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm';
+  if (s < 86400) return Math.floor(s/3600) + 'h';
+  return Math.floor(s/86400) + 'd';
+}
+const walletBy = addr => S.wallets.find(w => w.addr === addr);
+const tokLink = m => (LINKS[S.set.link] || LINKS.dexscreener)(m);
+const tokImg = (meta, cls='') => meta?.img
+  ? `<img class="${cls}" src="${esc(meta.img)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph-img'}))">`
+  : `<div class="ph-img ${cls}"></div>`;
+const tokSym = m => S.tokens[m]?.symbol ? '$' + S.tokens[m].symbol : short(m);
+
+/* =====================================================================
+   Solana RPC (HTTP) with a small concurrency-limited queue
+   ===================================================================== */
+let rid = 0;
+async function rpc(method, params) {
+  const r = await fetch(S.set.rpcHttp, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: ++rid, method, params }),
+  });
+  if (r.status === 429) throw Object.assign(new Error('rate limited'), { rl: true });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || 'rpc error');
+  return j.result;
+}
+const queue = []; let active = 0; const CONC = 4;
+function enqueue(job, priority) { priority ? queue.unshift(job) : queue.push(job); pump(); }
+function pump() {
+  while (active < CONC && queue.length) {
+    const job = queue.shift(); active++;
+    job().catch(() => {}).finally(() => { active--; pump(); });
+  }
+}
+
+async function fetchTx(sig) {
+  for (let i = 0; i < 6; i++) {
+    try {
+      const tx = await rpc('getTransaction', [sig, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0, commitment: 'confirmed' }]);
+      if (tx) return tx;
+    } catch (e) { if (!e.rl && i > 2) throw e; }
+    await sleep(350 * (i + 1));
+  }
+  return null;
+}
+
+/* Turn a parsed transaction into a trade for a specific wallet */
+function parseTrade(tx, wallet, sig) {
+  if (!tx?.meta || tx.meta.err) return null;
+  const keys = tx.transaction.message.accountKeys.map(k => typeof k === 'string' ? k : k.pubkey);
+  const i = keys.indexOf(wallet);
+  let sol = i >= 0 ? (tx.meta.postBalances[i] - tx.meta.preBalances[i]) / 1e9 : 0;
+  if (i === 0) sol += (tx.meta.fee || 0) / 1e9;           // don't count network fee as trade size
+  const d = {};
+  const add = (b, sign) => {
+    if (b.owner !== wallet) return;
+    d[b.mint] = (d[b.mint] || 0) + sign * (b.uiTokenAmount.uiAmount ?? Number(b.uiTokenAmount.uiAmountString) ?? 0);
+  };
+  (tx.meta.preTokenBalances || []).forEach(b => add(b, -1));
+  (tx.meta.postTokenBalances || []).forEach(b => add(b, +1));
+  let usd = 0;
+  if (d[WSOL]) { sol += d[WSOL]; delete d[WSOL]; }
+  for (const m of USD_MINTS) if (d[m]) { usd += d[m]; delete d[m]; }
+  const moved = Object.entries(d).filter(([, v]) => Math.abs(v) > 1e-9).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  if (!moved.length) return null;
+  const quoteUsd = sol * (S.solUsd || 0) + usd;
+  const [mint, amt] = moved.length === 1 ? moved[0]
+    : (moved.find(([, v]) => v > 0) || moved[0]);          // token-to-token: focus on what was received
+  let side;
+  if (moved.length > 1 && moved.some(([, v]) => v > 0) && moved.some(([, v]) => v < 0)) side = 'SWAP';
+  else if (amt > 0 && (sol < -0.0005 || usd < -0.01)) side = 'BUY';
+  else if (amt < 0 && (sol > 0.0005 || usd > 0.01)) side = 'SELL';
+  else side = amt > 0 ? 'IN' : 'OUT';
+  const ts = tx.blockTime ? tx.blockTime * 1000 : now();
+  const solAbs = Math.abs(sol) + (S.solUsd ? Math.abs(usd) / S.solUsd : 0);
+  return {
+    sig, wallet, side, mint, amount: Math.abs(amt),
+    sol: (side === 'BUY' || side === 'SELL') ? solAbs : 0,
+    usd: (side === 'BUY' || side === 'SELL') ? Math.abs(quoteUsd) : 0,
+    price: (side === 'BUY' || side === 'SELL') && Math.abs(amt) > 0 ? Math.abs(quoteUsd) / Math.abs(amt) : 0,
+    ts, detectedAt: now(),
+  };
+}
+
+async function processSig(sig, wallet, live) {
+  const key = sig + wallet;
+  if (S.seen.has(key)) return;
+  S.seen.add(key);
+  let tx;
+  try { tx = await fetchTx(sig); } catch { tx = null; }
+  if (!tx) { S.seen.delete(key); return; }   // let the poller retry later
+  const t = parseTrade(tx, wallet, sig);
+  if (!t) return;
+  ingest(t, live);
+}
+
+/* =====================================================================
+   Live connection: one WebSocket, one logsSubscribe per wallet
+   ===================================================================== */
+const Live = {
+  ws: null, subs: new Map(), pend: new Map(), bySub: new Map(), retry: 0, timer: null,
+  url() {
+    if (S.set.rpcWs) return S.set.rpcWs;
+    return S.set.rpcHttp.replace(/^http/i, 'ws');
+  },
+  connect() {
+    if (S.demo) return;
+    clearTimeout(this.timer);
+    try { this.ws && this.ws.close(); } catch {}
+    this.subs.clear(); this.pend.clear(); this.bySub.clear();
+    setConn('warn', 'Connecting…');
+    let ws;
+    try { ws = new WebSocket(this.url()); } catch { setConn('off', 'Bad WS URL'); return; }
+    this.ws = ws;
+    ws.onopen = () => {
+      this.retry = 0;
+      S.wallets.filter(w => !w.demo).forEach(w => this.sub(w.addr));
+      setConn('on', 'Live');
+    };
+    ws.onmessage = ev => {
+      let m; try { m = JSON.parse(ev.data); } catch { return; }
+      if (m.id && this.pend.has(m.id)) {
+        const addr = this.pend.get(m.id); this.pend.delete(m.id);
+        if (typeof m.result === 'number') { this.subs.set(addr, m.result); this.bySub.set(m.result, addr); }
+        return;
+      }
+      if (m.method === 'logsNotification') {
+        const v = m.params.result.value, addr = this.bySub.get(m.params.subscription);
+        if (!addr || v.err) return;
+        enqueue(() => processSig(v.signature, addr, true), true);
+      }
+    };
+    ws.onclose = () => {
+      if (this.ws !== ws || S.demo) return;
+      setConn('off', 'Reconnecting…');
+      this.timer = setTimeout(() => this.connect(), Math.min(15000, 800 * 2 ** this.retry++));
+    };
+    ws.onerror = () => {};
+  },
+  sub(addr) {
+    if (!this.ws || this.ws.readyState !== 1 || this.subs.has(addr)) return;
+    const id = ++rid; this.pend.set(id, addr);
+    this.ws.send(JSON.stringify({ jsonrpc: '2.0', id, method: 'logsSubscribe', params: [{ mentions: [addr] }, { commitment: 'confirmed' }] }));
+  },
+  unsub(addr) {
+    const s = this.subs.get(addr); if (s == null) return;
+    this.subs.delete(addr); this.bySub.delete(s);
+    try { this.ws.send(JSON.stringify({ jsonrpc: '2.0', id: ++rid, method: 'logsUnsubscribe', params: [s] })); } catch {}
+  },
+  stop() { clearTimeout(this.timer); const w = this.ws; this.ws = null; try { w && w.close(); } catch {} },
+};
+function setConn(kind, txt) { $('connDot').className = 'dot ' + kind; $('connTxt').textContent = txt; }
+
+/* Safety-net poller: round-robins wallets over HTTP in case a WS message is missed */
+let rr = 0;
+async function backstop() {
+  const ws = S.wallets.filter(w => !w.demo);
+  if (!S.demo && ws.length) {
+    const w = ws[rr++ % ws.length];
+    try {
+      const sigs = await rpc('getSignaturesForAddress', [w.addr, { limit: 6, commitment: 'confirmed' }]);
+      for (const s of sigs.reverse()) if (!s.err && !S.seen.has(s.signature + w.addr)) enqueue(() => processSig(s.signature, w.addr, true));
+    } catch {}
+  }
+  setTimeout(backstop, Math.max(1500, 6000 / Math.max(1, ws.length)));
+}
+
+async function backfill(addr) {
+  if (!S.set.backfill || S.demo) return;
+  try {
+    const sigs = await rpc('getSignaturesForAddress', [addr, { limit: +S.set.backfill }]);
+    sigs.filter(s => !s.err).forEach(s => enqueue(() => processSig(s.signature, addr, false)));
+  } catch (e) { toast('Backfill failed', e.message + ' — try a private RPC in Settings', ''); }
+}
+
+/* =====================================================================
+   Market data (DexScreener, batched, no key)
+   ===================================================================== */
+async function fetchMarket(mints) {
+  if (S.demo) return Demo.market(mints);
+  for (let i = 0; i < mints.length; i += 30) {
+    const chunk = mints.slice(i, i + 30);
+    try {
+      const r = await fetch('https://api.dexscreener.com/tokens/v1/solana/' + chunk.join(','));
+      const pairs = await r.json();
+      const best = {};
+      for (const p of pairs || []) {
+        const m = p.baseToken?.address; if (!m) continue;
+        if (!best[m] || (p.liquidity?.usd || 0) > (best[m].liquidity?.usd || 0)) best[m] = p;
+      }
+      for (const [m, p] of Object.entries(best)) {
+        const t5 = p.txns?.m5 || {};
+        S.tokens[m] = {
+          symbol: p.baseToken.symbol, name: p.baseToken.name, img: p.info?.imageUrl,
+          price: +p.priceUsd || 0, liq: p.liquidity?.usd || 0, mcap: p.marketCap || p.fdv || 0,
+          ch5: p.priceChange?.m5, ch1h: p.priceChange?.h1, vol5: p.volume?.m5,
+          b5: t5.buys || 0, s5: t5.sells || 0, created: p.pairCreatedAt, dex: p.dexId, at: now(),
+        };
+      }
+      chunk.forEach(m => { if (!S.tokens[m]) S.tokens[m] = { missing: true, at: now() }; });
+    } catch {}
+  }
+}
+async function refreshSol() {
+  if (S.demo) { S.solUsd = S.solUsd || 180; }
+  else try {
+    const r = await fetch('https://api.dexscreener.com/tokens/v1/solana/' + WSOL);
+    const pairs = (await r.json()).filter(p => p.baseToken?.address === WSOL && /USD/.test(p.quoteToken?.symbol || ''));
+    pairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+    if (pairs[0]) { S.solUsd = +pairs[0].priceUsd; save(); }
+  } catch {}
+  $('solPx').textContent = S.solUsd ? '$' + S.solUsd.toFixed(2) : '—';
+}
+
+/* =====================================================================
+   Ingest a trade -> feed, wallet stats, signals, alerts
+   ===================================================================== */
+function ingest(t, live) {
+  const w = walletBy(t.wallet); if (!w) return;
+  if (S.demo) t.demo = true;
+  S.trades.unshift(t);
+  if (S.trades.length > TRADES_MAX) S.trades.length = TRADES_MAX;
+  S.trades.sort((a, b) => b.ts - a.ts);
+  save();
+  const fresh = live && (now() - t.ts) / 1000 < LIVE_AGE_S;
+  if (fresh) {
+    const l = t.detectedAt - t.ts; if (l > 0 && l < 60000) { S.lat.push(l); if (S.lat.length > 30) S.lat.shift(); }
+    const avg = S.lat.reduce((a, b) => a + b, 0) / (S.lat.length || 1);
+    $('lat').textContent = S.lat.length ? (avg / 1000).toFixed(1) + 's' : '—';
+  }
+  if (!S.tokens[t.mint]) needMeta(t.mint);
+  addFeedRow(t, fresh);
+  flashWallet(t.wallet);
+  renderWallets(); renderKpis();
+
+  if (!fresh) return;
+  if (t.side === 'BUY' || t.side === 'SWAP') onBuy(t, w);
+  if (t.side === 'SELL') onSell(t, w);
+}
+
+function onBuy(t, w) {
+  if (t.side === 'BUY' && t.sol < +S.set.minBuySol) return;
+  let s = S.signals.get(t.mint);
+  if (!s) {
+    s = { mint: t.mint, first: t.ts, ref: t.price || 0, wallets: new Map(), samples: [], state: 'NEW', score: 0, reasons: [], notified: 0, everEnter: false };
+    S.signals.set(t.mint, s);
+  }
+  const prev = s.wallets.get(t.wallet) || { sol: 0, amt: 0, sold: 0, ts: t.ts };
+  prev.sol += t.sol; prev.amt += t.amount; s.wallets.set(t.wallet, prev);
+  if (!s.ref && t.price) s.ref = t.price;
+  s.expires = now() + S.set.windowMin * 60000;
+  if (S.set.nBuy) alert_({
+    kind: 'BUY', mint: t.mint,
+    title: `${w.label} bought ${tokSym(t.mint)}`,
+    body: `${fmtSol(t.sol)} (${fmtUsd(t.usd)}) · ${s.wallets.size > 1 ? s.wallets.size + ' tracked wallets in' : w.tag}`,
+  });
+  tickMarket(true);
+}
+
+function onSell(t, w) {
+  const s = S.signals.get(t.mint);
+  if (s && s.wallets.has(t.wallet)) {
+    const p = s.wallets.get(t.wallet);
+    p.sold += t.amount;
+  }
+  if (S.set.nSell) {
+    const pos = position(t.wallet, t.mint);
+    const pct = pos.bought > 0 ? Math.min(100, (t.amount / pos.bought) * 100) : null;
+    alert_({ kind: 'SELL', mint: t.mint, title: `${w.label} sold ${tokSym(t.mint)}`,
+      body: `${pct ? pct.toFixed(0) + '% of bag · ' : ''}${fmtSol(t.sol)} (${fmtUsd(t.usd)}) — consider taking profit` });
+  }
+  renderSignals();
+}
+
+/* =====================================================================
+   Entry scoring: is NOW a good time to follow?
+   ===================================================================== */
+function evaluate(s) {
+  const m = S.tokens[s.mint] || {};
+  const R = [], set = S.set;
+  const p = m.price || 0;
+  if (!s.ref && p) s.ref = p;
+  if (p) { s.samples.push([now(), p]); if (s.samples.length > 240) s.samples.shift(); }
+  const drift = s.ref && p ? (p / s.ref - 1) * 100 : null;
+  s.drift = drift;
+  const holders = [...s.wallets.values()];
+  const holding = holders.filter(h => h.sold < h.amt * 0.7).length;
+  const ageMin = (now() - s.first) / 60000;
+  const pressure = (m.b5 + m.s5) ? m.b5 / (m.b5 + m.s5) : null;
+  let sc = 0;
+
+  // 1. price vs insider entry (35)
+  let pts = 0;
+  if (drift == null) pts = 15;
+  else if (drift < set.maxDip) pts = 0;
+  else if (drift <= 5) pts = 35;
+  else if (drift <= set.maxDrift) pts = 25;
+  else if (drift <= set.maxDrift * 2) pts = 8;
+  sc += pts;
+  R.push([drift != null && drift <= set.maxDrift && drift >= set.maxDip, `Price ${fmtPct(drift)} vs insider entry (zone ${set.maxDip}% … +${set.maxDrift}%)`]);
+  // 2. liquidity (15)
+  const liqOk = m.liq >= set.minLiq; if (liqOk) sc += 15;
+  R.push([liqOk, `Liquidity ${fmtUsd(m.liq)} (min ${fmtUsd(+set.minLiq)})`]);
+  // 3. buy pressure last 5m (15)
+  if (pressure != null) { if (pressure >= .55) sc += 15; else if (pressure >= .45) sc += 8; }
+  R.push([pressure != null && pressure >= .5, `Buy pressure 5m ${pressure == null ? '—' : Math.round(pressure * 100) + '%'} (${m.b5 || 0}B / ${m.s5 || 0}S)`]);
+  // 4. confluence (15)
+  const n = s.wallets.size; sc += n >= 3 ? 15 : n === 2 ? 10 : 0;
+  R.push([n >= 2, `${n} tracked wallet${n > 1 ? 's' : ''} in`]);
+  // 5. still holding (10)
+  if (holding === n) sc += 10; else if (holding) sc += 4;
+  R.push([holding > 0, holding === n ? 'Insider still holding' : `${n - holding}/${n} sold`]);
+  // 6. freshness (5)
+  if (ageMin < 3) sc += 5; else if (ageMin < 8) sc += 2;
+  // 7. wallet quality (5)
+  const best = Math.max(...[...s.wallets.keys()].map(a => walletStats(a).winRate ?? 0));
+  if (best >= 55) sc += 5;
+  s.score = Math.round(sc); s.reasons = R; s.meta = m;
+
+  let st;
+  const mcOk = (!+set.minMcap || m.mcap >= +set.minMcap) && (!+set.maxMcap || m.mcap <= +set.maxMcap);
+  if (now() > s.expires) st = 'EXPIRED';
+  else if (!holding) st = 'EXITED';
+  else if (m.missing || (p && !liqOk) || (p && !mcOk)) st = 'AVOID';
+  else if (drift != null && drift < set.maxDip) st = 'DUMPING';
+  else if (drift != null && drift > set.maxDrift) st = 'LATE';
+  else if (s.score >= set.threshold && p) st = 'ENTER';
+  else st = 'WATCH';
+
+  if (st === 'ENTER' && s.state !== 'ENTER' && now() - s.notified > 45000) {
+    s.notified = now();
+    const names = [...s.wallets.keys()].map(a => walletBy(a)?.label || short(a)).join(', ');
+    if (S.set.nEnter) alert_({
+      kind: 'ENTER', mint: s.mint,
+      title: `🟢 ENTER ${tokSym(s.mint)} — score ${s.score}`,
+      body: `${s.everEnter ? 'Pulled back into zone. ' : ''}${names} in @ ${stripTags(fmtPx(s.ref))} · now ${fmtPct(drift)} · MC ${fmtUsd(m.mcap)}`,
+    });
+    s.everEnter = true;
+  }
+  s.state = st;
+}
+const stripTags = h => h.replace(/<sub>(\d+)<\/sub>/, (_, z) => [...z].map(d => '₀₁₂₃₄₅₆₇₈₉'[d]).join('')).replace(/<[^>]+>/g, '');
+
+let marketBusy = false;
+async function tickMarket(force) {
+  if (marketBusy && !force) return;
+  marketBusy = true;
+  try {
+    for (const [m, s] of S.signals) if (now() > s.expires + 5 * 60000) S.signals.delete(m);
+    const mints = [...S.signals.keys()];
+    if (mints.length) await fetchMarket(mints);
+    S.signals.forEach(evaluate);
+    renderSignals();
+    $('tickInfo').textContent = mints.length ? `refresh ${S.set.pollSec}s` : '';
+  } finally { marketBusy = false; }
+}
+
+/* =====================================================================
+   Alerts: browser notification + sound + toast + tab title
+   ===================================================================== */
+let swReg = null;
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').then(r => swReg = r).catch(() => {});
+}
+function alert_({ kind, mint, title, body }) {
+  const url = tokLink(mint);
+  toast(title, body, kind, url);
+  if (S.set.sound) beep(kind);
+  if (navigator.vibrate && navigator.userActivation?.hasBeenActive && kind === 'ENTER') navigator.vibrate([120, 60, 120]);
+  if (document.hidden) flashTitle(title);
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const opts = { body, tag: kind + mint, renotify: true, requireInteraction: kind === 'ENTER', data: { url }, icon: S.tokens[mint]?.img };
+    if (swReg) swReg.showNotification(title, opts).catch(() => {});
+    else try { const n = new Notification(title, opts); n.onclick = () => { window.open(url, '_blank'); n.close(); }; } catch {}
+  }
+}
+let actx;
+function beep(kind) {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const seq = kind === 'ENTER' ? [660, 880, 1175] : kind === 'SELL' ? [520, 390] : [740];
+    seq.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + i * 0.11;
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + 0.18);
+    });
+  } catch {}
+}
+let titleT, baseTitle = document.title;
+function flashTitle(t) {
+  clearInterval(titleT); let on = false;
+  titleT = setInterval(() => { document.title = (on = !on) ? '● ' + t : baseTitle; }, 900);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { clearInterval(titleT); document.title = baseTitle; } });
+function toast(t1, t2, kind, url) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || '');
+  el.innerHTML = `<div style="font-size:18px">${kind === 'ENTER' ? '🎯' : kind === 'SELL' ? '🔻' : kind === 'BUY' ? '🟢' : 'ℹ️'}</div><div><div class="t1">${esc(t1)}</div><div class="t2">${esc(t2)}</div></div>`;
+  if (url) el.onclick = () => window.open(url, '_blank');
+  $('toasts').prepend(el);
+  while ($('toasts').children.length > 4) $('toasts').lastChild.remove();
+  setTimeout(() => el.remove(), kind === 'ENTER' ? 12000 : 5000);
+}
+
+/* =====================================================================
+   Analytics
+   ===================================================================== */
+function position(addr, mint) {
+  let bought = 0, sold = 0, buySol = 0, sellSol = 0, first = 0, last = 0;
+  for (const t of S.trades) {
+    if (t.wallet !== addr || t.mint !== mint) continue;
+    if (t.side === 'BUY' || t.side === 'SWAP' || t.side === 'IN') { bought += t.amount; buySol += t.sol; }
+    else if (t.side === 'SELL' || t.side === 'OUT') { sold += t.amount; sellSol += t.sol; }
+    first = first ? Math.min(first, t.ts) : t.ts; last = Math.max(last, t.ts);
+  }
+  return { bought, sold, buySol, sellSol, first, last };
+}
+const statCache = new Map();
+function walletStats(addr) {
+  const hit = statCache.get(addr); if (hit && hit.n === S.trades.length) return hit.v;
+  const per = new Map(); let n = 0, lastTs = 0, buys = 0, buySum = 0;
+  for (const t of S.trades) {
+    if (t.wallet !== addr) continue; n++; lastTs = Math.max(lastTs, t.ts);
+    if (t.side === 'BUY') { buys++; buySum += t.sol; }
+    if (!per.has(t.mint)) per.set(t.mint, position(addr, t.mint));
+  }
+  let realized = 0, wins = 0, closed = 0, open = 0, unreal = 0;
+  const rows = [];
+  for (const [mint, p] of per) {
+    const frac = p.bought > 0 ? Math.min(1, p.sold / p.bought) : (p.sold > 0 ? 1 : 0);
+    const r = p.sellSol - p.buySol * frac;
+    if (p.sold > 0 && p.buySol > 0) { realized += r; if (frac >= 0.9) { closed++; if (r > 0) wins++; } }
+    const remaining = Math.max(0, p.bought - p.sold);
+    const px = S.tokens[mint]?.price;
+    const u = remaining > 0 && px && S.solUsd ? remaining * px / S.solUsd - p.buySol * (1 - frac) : null;
+    if (remaining > 0 && frac < 0.9 && p.buySol > 0) { open++; if (u != null) unreal += u; }
+    rows.push({ mint, ...p, realized: p.buySol > 0 && p.sold > 0 ? r : null, unreal: u, status: frac >= 0.9 ? 'closed' : 'open' });
+  }
+  rows.sort((a, b) => b.last - a.last);
+  const v = { n, buys, avgBuy: buys ? buySum / buys : 0, realized, winRate: closed ? wins / closed * 100 : null, closed, open, unreal, lastTs, rows };
+  statCache.set(addr, { n: S.trades.length, v });
+  return v;
+}
+
+/* =====================================================================
+   Rendering
+   ===================================================================== */
+function avatar(w) {
+  return `<div class="av" style="background:${w.color}">${esc((w.label || '?').slice(0, 2).toUpperCase())}</div>`;
+}
+let wRenderQ = false;
+function renderWallets() {
+  if (wRenderQ) return; wRenderQ = true;
+  requestAnimationFrame(() => {
+    wRenderQ = false;
+    const list = S.wallets.filter(w => S.tagFilter === 'ALL' || w.tag === S.tagFilter);
+    $('wCount').textContent = S.wallets.length; $('kW').textContent = S.wallets.length;
+    if (!S.wallets.length) {
+      $('wList').innerHTML = `<div class="empty">Paste a wallet address above to start tracking.<br><span class="dim">Trades show up live in the feed; buys that are still a good entry appear under <b>Entry signals</b> and send you an alert.</span><br><br><button class="btn" id="tryDemo">Preview with demo data</button></div>`;
+      $('tryDemo').onclick = () => setDemo(true);
+      return;
+    }
+    $('wList').innerHTML = list.map(w => {
+      const st = walletStats(w.addr);
+      const live = Live.subs.has(w.addr) || w.demo;
+      return `<div class="wallet" data-w="${w.addr}">
+        ${avatar(w)}
+        <div class="wmeta">
+          <div class="wname">${esc(w.label)} <span class="tag ${esc(w.tag)}">${esc(w.tag)}</span></div>
+          <div class="wsub">${short(w.addr)} · ${st.lastTs ? ago(st.lastTs) + ' ago' : 'no trades yet'}</div>
+        </div>
+        <div class="wright">
+          <div class="num ${st.realized > 0 ? 'g' : st.realized < 0 ? 'r' : 'muted'}">${st.realized ? (st.realized > 0 ? '+' : '') + fmtSol(st.realized) : '—'}</div>
+          <div class="muted">${st.winRate == null ? '' : Math.round(st.winRate) + '% win · '}<span class="dot ${live ? 'on' : ''}" style="display:inline-block;width:6px;height:6px;vertical-align:middle"></span></div>
+        </div></div>`;
+    }).join('');
+  });
+}
+function renderChips() {
+  $('tagChips').innerHTML = ['ALL', ...TAGS].map(t => `<button class="chip ${S.tagFilter === t ? 'on' : ''}" data-t="${t}">${t === 'ALL' ? 'All' : t}</button>`).join('');
+}
+function flashWallet(addr) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const el = document.querySelector(`.wallet[data-w="${addr}"]`); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  }));
+}
+
+function feedRowHtml(t) {
+  const w = walletBy(t.wallet) || { label: short(t.wallet), color: '#555', tag: '' };
+  const m = S.tokens[t.mint];
+  const size = t.sol ? `<div class="num">${fmtSol(t.sol)}</div><div class="muted num" style="font-size:11px">${fmtUsd(t.usd)}</div>` : `<div class="muted num">${t.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>`;
+  return `<span class="muted num ago" data-ts="${t.ts}">${ago(t.ts)}</span>
+    <span class="c-wallet" style="display:flex;align-items:center;gap:7px;min-width:0"><span class="dot" style="background:${w.color}"></span><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.label)}</b></span>
+    <span class="side ${t.side}">${t.side}</span>
+    <a class="tok" href="${tokLink(t.mint)}" target="_blank" rel="noopener">${tokImg(m)}<b>${esc(tokSym(t.mint))}</b>${t.price ? `<span class="muted num px">${fmtPx(t.price)}</span>` : ''}</a>
+    <span style="text-align:right">${size}</span>
+    <span class="c-mc num muted" style="text-align:right">${fmtUsd(m?.mcap)}</span>
+    <span class="links"><a class="lk" href="https://solscan.io/tx/${t.sig}" target="_blank" rel="noopener">tx</a><a class="lk" href="https://gmgn.ai/sol/token/${t.mint}" target="_blank" rel="noopener">gm</a></span>`;
+}
+function passFeed(t) {
+  if (S.feedFilter !== 'ALL' && t.side !== S.feedFilter) return false;
+  const w = walletBy(t.wallet); if (!w) return false;
+  return S.tagFilter === 'ALL' || w.tag === S.tagFilter;
+}
+function addFeedRow(t, fresh) {
+  if (!passFeed(t)) return;
+  const feed = $('feed');
+  feed.querySelector('.empty')?.remove();
+  const el = document.createElement('div');
+  el.className = `trade ${t.side}${fresh ? ' new' : ''}`; el.dataset.sig = t.sig + t.wallet; el.dataset.ts = t.ts;
+  el.innerHTML = feedRowHtml(t);
+  // keep feed sorted by time (backfill can arrive out of order)
+  let ref = feed.firstElementChild;
+  while (ref && +ref.dataset.ts > t.ts) ref = ref.nextElementSibling;
+  feed.insertBefore(el, ref);
+  while (feed.children.length > FEED_MAX_DOM) feed.lastChild.remove();
+}
+/* batch unknown tokens into one DexScreener call */
+const metaWant = new Set(); let metaT;
+function needMeta(m) {
+  metaWant.add(m); clearTimeout(metaT);
+  metaT = setTimeout(async () => {
+    const ms = [...metaWant]; metaWant.clear();
+    await fetchMarket(ms);
+    const set = new Set(ms), byKey = new Map(S.trades.map(x => [x.sig + x.wallet, x]));
+    document.querySelectorAll('.trade[data-sig]').forEach(el => {
+      const tr = byKey.get(el.dataset.sig); if (tr && set.has(tr.mint)) el.innerHTML = feedRowHtml(tr);
+    });
+    renderSignals();
+  }, 250);
+}
+function renderFeed() {
+  const rows = S.trades.filter(passFeed).slice(0, FEED_MAX_DOM);
+  $('feed').innerHTML = rows.length ? rows.map(t => `<div class="trade ${t.side}" data-sig="${t.sig + t.wallet}" data-ts="${t.ts}">${feedRowHtml(t)}</div>`).join('')
+    : `<div class="empty">Waiting for trades…<br><span class="dim">Every swap from your tracked wallets lands here the moment it confirms.</span></div>`;
+}
+function renderKpis() {
+  const h = now() - 3600000; let b = 0, s = 0;
+  for (const t of S.trades) { if (t.ts < h) break; if (t.side === 'BUY') b++; else if (t.side === 'SELL') s++; }
+  $('kB').textContent = b; $('kS').textContent = s;
+  const e = [...S.signals.values()].filter(x => x.state === 'ENTER').length;
+  $('kE').textContent = e;
+  $('tabBadge').hidden = !e; $('tabBadge').textContent = e;
+}
+
+function spark(samples, ref) {
+  if (samples.length < 2) return `<svg class="spark" viewBox="0 0 300 46"></svg>`;
+  const ps = samples.map(s => s[1]); const all = ref ? ps.concat(ref) : ps;
+  let lo = Math.min(...all), hi = Math.max(...all); if (hi === lo) { hi *= 1.001; lo *= 0.999; }
+  const t0 = samples[0][0], t1 = samples[samples.length - 1][0] || t0 + 1;
+  const X = t => ((t - t0) / Math.max(1, t1 - t0)) * 300, Y = p => 42 - ((p - lo) / (hi - lo)) * 38;
+  const pts = samples.map(s => X(s[0]).toFixed(1) + ',' + Y(s[1]).toFixed(1)).join(' ');
+  const up = ps[ps.length - 1] >= (ref || ps[0]);
+  const c = up ? 'var(--green)' : 'var(--red)';
+  const zoneTop = ref ? Y(ref * (1 + S.set.maxDrift / 100)) : 0, zoneBot = ref ? Y(ref) : 0;
+  return `<svg class="spark" viewBox="0 0 300 46" preserveAspectRatio="none">
+    ${ref ? `<rect x="0" y="${Math.max(0, Math.min(zoneTop, 46))}" width="300" height="${Math.max(0, Math.min(46, zoneBot) - Math.max(0, zoneTop))}" fill="rgba(25,230,140,.07)"/>
+    <line x1="0" x2="300" y1="${zoneBot}" y2="${zoneBot}" stroke="var(--dim)" stroke-dasharray="3 4" stroke-width="1" vector-effect="non-scaling-stroke"/>` : ''}
+    <polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+}
+const ORDER = { ENTER: 0, WATCH: 1, LATE: 2, NEW: 3, DUMPING: 4, AVOID: 5, EXITED: 6, EXPIRED: 7 };
+const LABEL = { ENTER: 'ENTER NOW', WATCH: 'WATCHING', LATE: 'LATE · WAIT DIP', DUMPING: 'DUMPING', AVOID: 'AVOID', EXITED: 'INSIDER EXITED', EXPIRED: 'EXPIRED', NEW: 'LOADING' };
+function renderSignals() {
+  const list = [...S.signals.values()].sort((a, b) => (ORDER[a.state] - ORDER[b.state]) || b.score - a.score || b.first - a.first);
+  $('sCount').textContent = list.length;
+  renderKpis();
+  if (!list.length) { $('sigs').innerHTML = `<div class="empty">No live entries.<br><span class="dim">When a tracked wallet buys, the token appears here with a live score. You get an <b class="g">ENTER</b> alert while price is still near their entry, liquidity is real and they're still holding.</span></div>`; return; }
+  $('sigs').innerHTML = list.map(s => {
+    const m = s.meta || S.tokens[s.mint] || {};
+    const sc = s.score, col = sc >= S.set.threshold ? 'var(--green)' : sc >= 40 ? 'var(--amber)' : 'var(--red)';
+    const left = Math.max(0, s.expires - now());
+    return `<div class="sig ${s.state}" data-m="${s.mint}">
+      <div class="top">${tokImg(m)}
+        <div style="min-width:0"><div class="name">${esc(tokSym(s.mint))} <span class="muted" style="font-weight:500;font-size:12px">${esc(m.name || '')}</span></div>
+        <div class="muted num" style="font-size:11px">first buy ${ago(s.first)} ago · ${Math.ceil(left / 60000)}m left</div></div>
+        <span class="state ${s.state}">${LABEL[s.state]}</span></div>
+      <div class="sgrid">
+        <div><div class="l">Entry</div><div class="v">${fmtPx(s.ref)}</div></div>
+        <div><div class="l">Now</div><div class="v ${s.drift > 0 ? 'g' : s.drift < 0 ? 'r' : ''}">${fmtPct(s.drift)}</div></div>
+        <div><div class="l">MCap</div><div class="v">${fmtUsd(m.mcap)}</div></div>
+        <div><div class="l">Score</div><div class="v" style="color:${col}">${sc}</div></div>
+      </div>
+      ${spark(s.samples, s.ref)}
+      <div class="meter"><i style="width:${sc}%;background:${col}"></i></div>
+      <div class="reasons">${s.reasons.map(([ok, txt]) => `<div><span class="${ok ? 'g' : 'r'}">${ok ? '✓' : '✗'}</span><span class="${ok ? '' : 'muted'}">${esc(txt)}</span></div>`).join('')}</div>
+      <div class="who">${[...s.wallets.entries()].map(([a, h]) => { const w = walletBy(a); return `<span class="${h.sold >= h.amt * .7 ? 'sold' : ''}" style="border-color:${w?.color || '#333'}55">${esc(w?.label || short(a))} · ${fmtSol(h.sol)}</span>`; }).join('')}</div>
+      <div class="sact">
+        <a class="btn ${s.state === 'ENTER' ? 'pri' : ''}" href="${tokLink(s.mint)}" target="_blank" rel="noopener">Open token ↗</a>
+        <button class="btn" data-copy="${s.mint}">Copy CA</button>
+        <button class="btn" data-dismiss="${s.mint}">✕</button>
+      </div></div>`;
+  }).join('');
+}
+
+/* ---------- wallet drawer ---------- */
+function openDrawer(head, body) { $('dHead').innerHTML = head; $('dBody').innerHTML = body; $('drawer').classList.add('open'); $('veil').classList.add('open'); }
+function closeDrawer() { $('drawer').classList.remove('open'); $('veil').classList.remove('open'); }
+$('veil').onclick = closeDrawer;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+function pnlCurve(addr) {
+  const ts = S.trades.filter(t => t.wallet === addr && (t.side === 'BUY' || t.side === 'SELL')).slice().reverse();
+  let c = 0; const pts = [[0, 0]];
+  ts.forEach((t, i) => { c += t.side === 'SELL' ? t.sol : -t.sol; pts.push([i + 1, c]); });
+  if (pts.length < 3) return '<div class="muted" style="font-size:12px">Not enough trades yet.</div>';
+  const ys = pts.map(p => p[1]); let lo = Math.min(...ys, 0), hi = Math.max(...ys, 0); if (hi === lo) hi = lo + 1;
+  const X = i => i / (pts.length - 1) * 500, Y = v => 76 - (v - lo) / (hi - lo) * 72;
+  const line = pts.map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 500 80" preserveAspectRatio="none" style="width:100%;height:90px">
+    <line x1="0" x2="500" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--dim)" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>
+    <polyline points="${line}" fill="none" stroke="${c >= 0 ? 'var(--green)' : 'var(--red)'}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+    <div class="muted" style="font-size:11px">Net SOL flow over the last ${ts.length} tracked buys/sells (includes still-open positions).</div>`;
+}
+function showWallet(addr) {
+  const w = walletBy(addr); if (!w) return;
+  const st = walletStats(addr);
+  const tile = (l, v, c = '') => `<div class="card"><h4>${l}</h4><div class="num ${c}" style="font-size:18px;font-weight:700">${v}</div></div>`;
+  openDrawer(
+    `${avatar(w)}<div style="flex:1;min-width:0"><div class="wname" style="font-size:15px">${esc(w.label)} <span class="tag ${esc(w.tag)}">${esc(w.tag)}</span></div>
+     <a class="wsub" href="https://solscan.io/account/${addr}" target="_blank" rel="noopener">${addr}</a></div>
+     <button class="btn sm" id="dClose">✕</button>`,
+    `<div class="stats">
+      ${tile('Realized PnL', (st.realized > 0 ? '+' : '') + fmtSol(st.realized), st.realized >= 0 ? 'g' : 'r')}
+      ${tile('Win rate', st.winRate == null ? '—' : Math.round(st.winRate) + '%', st.winRate >= 50 ? 'g' : '')}
+      ${tile('Unrealized', st.open ? (st.unreal > 0 ? '+' : '') + fmtSol(st.unreal) : '—', st.unreal >= 0 ? 'g' : 'r')}
+      ${tile('Trades', st.n)}
+      ${tile('Avg buy', fmtSol(st.avgBuy))}
+      ${tile('Open bags', st.open)}
+    </div>
+    <div class="card"><h4>PnL curve</h4>${pnlCurve(addr)}</div>
+    <div class="card"><h4>Positions</h4>
+      <table><thead><tr><th>Token</th><th class="n">In</th><th class="n">Out</th><th class="n">PnL</th><th class="n">Last</th></tr></thead><tbody>
+      ${st.rows.slice(0, 40).map(r => { const pnl = r.realized ?? r.unreal; return `<tr>
+        <td><a class="tok" href="${tokLink(r.mint)}" target="_blank" rel="noopener">${tokImg(S.tokens[r.mint])}<b>${esc(tokSym(r.mint))}</b>${r.status === 'open' ? ' <span class="tag Trader">open</span>' : ''}</a></td>
+        <td class="n">${fmtSol(r.buySol)}</td><td class="n">${fmtSol(r.sellSol)}</td>
+        <td class="n ${pnl > 0 ? 'g' : pnl < 0 ? 'r' : 'muted'}">${pnl == null ? '—' : (pnl > 0 ? '+' : '') + fmtSol(pnl)}</td>
+        <td class="n muted">${ago(r.last)}</td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">No trades yet.</td></tr>'}
+      </tbody></table></div>
+    <div class="card form"><h4>Edit</h4>
+      <div class="two"><label>Label<input class="inp" id="eLabel" value="${esc(w.label)}" maxlength="24"></label>
+      <label>Tag<select class="inp" id="eTag">${TAGS.map(t => `<option ${t === w.tag ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>
+      <div class="row"><button class="btn pri" id="eSave">Save</button><button class="btn" id="eBack">Reload history</button><span class="spacer"></span><button class="btn" id="eDel" style="color:var(--red)">Remove wallet</button></div>
+    </div>`
+  );
+  $('dClose').onclick = closeDrawer;
+  $('eSave').onclick = () => { w.label = $('eLabel').value.trim() || w.label; w.tag = $('eTag').value; save(); renderWallets(); renderFeed(); showWallet(addr); };
+  $('eBack').onclick = () => { backfill(addr); toast('Loading history', w.label, ''); };
+  $('eDel').onclick = () => {
+    if (!confirm(`Stop tracking ${w.label}?`)) return;
+    Live.unsub(addr);
+    S.wallets = S.wallets.filter(x => x.addr !== addr);
+    S.trades = S.trades.filter(t => t.wallet !== addr);
+    save(); closeDrawer(); renderWallets(); renderFeed(); renderKpis();
+  };
+}
+
+/* ---------- settings ---------- */
+function showSettings() {
+  const s = S.set;
+  const num = (k, l, hint, step = 'any') => `<label>${l}<input class="inp num" type="number" step="${step}" data-k="${k}" value="${s[k]}">${hint ? `<span class="hint">${hint}</span>` : ''}</label>`;
+  const chk = (k, l) => `<label class="toggle"><input type="checkbox" data-k="${k}" ${s[k] ? 'checked' : ''}> ${l}</label>`;
+  openDrawer(`<div style="font-size:15px;font-weight:700;flex:1">Settings</div><button class="btn sm" id="dClose">✕</button>`,
+    `<div class="card form"><h4>Connection</h4>
+      <label>RPC HTTP URL<input class="inp num" data-k="rpcHttp" value="${esc(s.rpcHttp)}" spellcheck="false"><span class="hint">The free public RPC is slow and rate-limited. For real-time speed paste a free Helius / QuickNode / Triton URL (e.g. https://mainnet.helius-rpc.com/?api-key=…).</span></label>
+      <label>RPC WebSocket URL (optional)<input class="inp num" data-k="rpcWs" value="${esc(s.rpcWs)}" placeholder="auto: same as HTTP with wss://" spellcheck="false"></label>
+      ${num('backfill', 'History to load per new wallet (txs)', '', 1)}
+    </div>
+    <div class="card form"><h4>Entry signal rules</h4>
+      <div class="two">${num('maxDrift', 'Max % above insider entry', 'Above this = LATE (wait for a dip)')}${num('maxDip', 'Max % below entry', 'Below this = DUMPING')}</div>
+      <div class="two">${num('minLiq', 'Min liquidity (USD)')}${num('minBuySol', 'Ignore buys under (SOL)')}</div>
+      <div class="two">${num('minMcap', 'Min market cap (0 = off)')}${num('maxMcap', 'Max market cap (0 = off)')}</div>
+      <div class="two">${num('threshold', 'Score needed for ENTER', '0–100', 1)}${num('windowMin', 'Signal lifetime (minutes)', '', 1)}</div>
+      ${num('pollSec', 'Price refresh (seconds)', '', 1)}
+    </div>
+    <div class="card form"><h4>Alerts</h4>
+      ${chk('nEnter', '🎯 Good entry (ENTER) alerts')}${chk('nBuy', '🟢 Every buy by a tracked wallet')}${chk('nSell', '🔻 Sells by tracked wallets')}${chk('sound', '🔊 Sound')}
+      <label>Open tokens in<select class="inp" data-k="link">${Object.keys(LINKS).map(k => `<option ${k === s.link ? 'selected' : ''}>${k}</option>`).join('')}</select></label>
+      <div class="row"><button class="btn" id="testAlert">Test alert</button></div>
+    </div>
+    <div class="card form"><h4>Data</h4><div class="row"><button class="btn" id="clrTrades">Clear trade history</button><button class="btn" id="resetSet">Reset settings</button></div></div>`);
+  $('dClose').onclick = closeDrawer;
+  $('dBody').querySelectorAll('[data-k]').forEach(el => el.onchange = () => {
+    const k = el.dataset.k, v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value : el.value.trim();
+    const conn = (k === 'rpcHttp' || k === 'rpcWs') && s[k] !== v;
+    s[k] = v; save(); syncBtns();
+    if (conn) Live.connect();
+    if (k === 'pollSec') restartMarket();
+    S.signals.forEach(evaluate); renderSignals();
+  });
+  $('testAlert').onclick = () => alert_({ kind: 'ENTER', mint: WSOL, title: '🟢 ENTER $TEST — score 82', body: 'This is what a good-entry alert looks like.' });
+  $('clrTrades').onclick = () => { if (confirm('Delete all stored trades?')) { S.trades = []; S.seen.clear(); statCache.clear(); save(); renderFeed(); renderWallets(); renderKpis(); } };
+  $('resetSet').onclick = () => { S.set = Object.assign({}, DEFAULTS); save(); showSettings(); Live.connect(); };
+}
+
+function showIO() {
+  const data = JSON.stringify(S.wallets.filter(w => !w.demo).map(({ addr, label, tag }) => ({ addr, label, tag })), null, 1);
+  openDrawer(`<div style="font-size:15px;font-weight:700;flex:1">Import / Export wallets</div><button class="btn sm" id="dClose">✕</button>`,
+    `<div class="card form"><h4>Your list (copy to back up or share)</h4>
+     <textarea class="inp num" id="ioTxt" rows="14" spellcheck="false" style="resize:vertical">${esc(data)}</textarea>
+     <span class="hint">To import, paste JSON like above — or just one address per line, optionally "address label".</span>
+     <div class="row"><button class="btn pri" id="ioImp">Import</button><button class="btn" id="ioCopy">Copy</button></div></div>`);
+  $('dClose').onclick = closeDrawer;
+  $('ioCopy').onclick = () => { navigator.clipboard?.writeText($('ioTxt').value); toast('Copied', 'Wallet list copied', ''); };
+  $('ioImp').onclick = () => {
+    const txt = $('ioTxt').value.trim(); let items = [];
+    try { items = JSON.parse(txt); } catch {
+      items = txt.split(/\n+/).map(l => l.trim().split(/[\s,;]+/)).filter(p => p[0]).map(([addr, ...rest]) => ({ addr, label: rest.join(' ') }));
+    }
+    let n = 0; (Array.isArray(items) ? items : []).forEach(i => { if (addWallet(i.addr, i.label, i.tag, true)) n++; });
+    toast('Imported', `${n} new wallet${n === 1 ? '' : 's'}`, ''); closeDrawer();
+  };
+}
+
+/* =====================================================================
+   Wallet management
+   ===================================================================== */
+function addWallet(addr, label, tag, quiet) {
+  addr = (addr || '').trim();
+  if (!isAddr(addr)) { if (!quiet) toast('Invalid address', 'Paste a Solana wallet address', ''); return false; }
+  if (walletBy(addr)) { if (!quiet) toast('Already tracking', short(addr), ''); return false; }
+  const w = { addr, label: (label || '').trim() || short(addr), tag: TAGS.includes(tag) ? tag : 'Insider', color: COLORS[S.wallets.length % COLORS.length], addedAt: now() };
+  S.wallets.push(w); save();
+  Live.sub(addr); backfill(addr);
+  renderWallets();
+  return true;
+}
+$('addForm').onsubmit = e => {
+  e.preventDefault();
+  if (addWallet($('addAddr').value, $('addLabel').value, $('addTag').value)) { $('addAddr').value = ''; $('addLabel').value = ''; }
+};
+$('addAddr').addEventListener('paste', () => setTimeout(() => $('addLabel').focus(), 0));
+
+/* =====================================================================
+   Demo mode (simulated trades so you can preview everything)
+   ===================================================================== */
+const Demo = {
+  timer: null, toks: {},
+  B58: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
+  addr() { let s = ''; for (let i = 0; i < 44; i++) s += this.B58[Math.random() * 58 | 0]; return s; },
+  names: [['GOAT','Goatseus'],['FROG','Frog Nation'],['CHAD','Gigachad'],['MOON','To The Moon'],['DOGE2','Doge Two'],['PEPE','Pepe Sol'],['WIF','Hat Dog'],['BONKX','Bonk X']],
+  start() {
+    if (!S.wallets.length || S.wallets.every(w => w.demo)) {
+      [['Insider #1','Insider'],['Cupsey-like','Trader'],['KOL Alpha','KOL'],['Dev Wallet','Insider']].forEach(([l, t], i) =>
+        S.wallets.push({ addr: this.addr(), label: l, tag: t, color: COLORS[i], demo: true, addedAt: now() }));
+    }
+    this.names.forEach(([sym, name]) => { const m = this.addr(); this.toks[m] = { sym, name, p: 0.00001 + Math.random() * 0.002, liq: 8000 + Math.random() * 120000, sup: 1e9, b: 10, s: 8 }; });
+    const loop = () => { this.trade(); this.timer = setTimeout(loop, 1800 + Math.random() * 3500); };
+    loop(); this.trade(); this.trade();
+  },
+  stop() { clearTimeout(this.timer); S.wallets = S.wallets.filter(w => !w.demo); S.trades = S.trades.filter(t => !t.demo); S.signals.clear(); this.toks = {}; },
+  trade() {
+    const ws = S.wallets; if (!ws.length) return;
+    const mints = Object.keys(this.toks);
+    const hot = [...S.signals.keys()].filter(m => this.toks[m]);
+    const mint = hot.length && Math.random() < 0.55 ? hot[Math.random() * hot.length | 0] : mints[Math.random() * mints.length | 0];
+    const w = ws[Math.random() * ws.length | 0], tk = this.toks[mint];
+    const holding = S.trades.some(t => t.wallet === w.addr && t.mint === mint && t.side === 'BUY' && t.demo);
+    const side = holding && Math.random() < 0.35 ? 'SELL' : 'BUY';
+    const sol = +(0.2 + Math.random() * (w.tag === 'Whale' ? 40 : 6)).toFixed(3);
+    const usd = sol * S.solUsd;
+    if (side === 'BUY') { tk.p *= 1 + Math.random() * 0.04; tk.b += 3; } else { tk.p *= 1 - Math.random() * 0.05; tk.s += 3; }
+    const ts = now() - 400 - Math.random() * 900;
+    ingest({ sig: this.addr() + this.addr().slice(0, 40), wallet: w.addr, side, mint, amount: usd / tk.p, sol, usd, price: tk.p, ts, detectedAt: now(), demo: true }, true);
+  },
+  market(mints) {
+    for (const m of mints) {
+      const tk = this.toks[m]; if (!tk) continue;
+      tk.p *= 1 + (Math.random() - 0.47) * 0.035; tk.b += Math.random() * 4 | 0; tk.s += Math.random() * 4 | 0;
+      S.tokens[m] = { symbol: tk.sym, name: tk.name, price: tk.p, liq: tk.liq, mcap: tk.p * tk.sup, b5: tk.b, s5: tk.s, at: now() };
+    }
+  },
+};
+function setDemo(on) {
+  if (on === S.demo) return;
+  S.demo = on;
+  if (on) {
+    Live.stop(); setConn('warn', 'Demo'); refreshSol(); Demo.start();
+    Object.keys(Demo.toks).forEach(m => Demo.market([m]));
+  } else { Demo.stop(); Live.connect(); }
+  statCache.clear(); syncBtns(); renderWallets(); renderFeed(); renderSignals(); renderKpis();
+}
+
+/* =====================================================================
+   Wiring
+   ===================================================================== */
+function syncBtns() {
+  $('soundBtn').textContent = S.set.sound ? '🔊' : '🔇';
+  $('demoBtn').classList.toggle('on', S.demo);
+  const perm = 'Notification' in window ? Notification.permission : 'denied';
+  $('notifBtn').classList.toggle('on', perm === 'granted');
+  $('notifBtn').innerHTML = perm === 'granted' ? '🔔 <span class="hide-m">Alerts on</span>' : '🔔 <span class="hide-m">Enable alerts</span>';
+}
+$('soundBtn').onclick = () => { S.set.sound = !S.set.sound; save(); syncBtns(); if (S.set.sound) beep('BUY'); };
+$('demoBtn').onclick = () => setDemo(!S.demo);
+$('setBtn').onclick = showSettings;
+$('ioBtn').onclick = showIO;
+$('notifBtn').onclick = async () => {
+  if (!('Notification' in window)) return toast('Not supported', 'This browser has no notifications — sound + on-screen alerts still work', '');
+  const p = await Notification.requestPermission(); syncBtns();
+  if (p === 'granted') { beep('ENTER'); toast('Alerts enabled', 'You will be pinged when a tracked wallet gives a good entry', 'ENTER'); }
+};
+$('tagChips').onclick = e => { const t = e.target.dataset.t; if (!t) return; S.tagFilter = t; renderChips(); renderWallets(); renderFeed(); };
+document.querySelector('.feedbar').onclick = e => {
+  const f = e.target.dataset.f; if (!f) return; S.feedFilter = f;
+  document.querySelectorAll('.feedbar .chip').forEach(c => c.classList.toggle('on', c.dataset.f === f)); renderFeed();
+};
+$('wList').onclick = e => { const el = e.target.closest('.wallet'); if (el) showWallet(el.dataset.w); };
+$('sigs').onclick = e => {
+  const c = e.target.dataset.copy, d = e.target.dataset.dismiss;
+  if (c) { navigator.clipboard?.writeText(c); toast('Contract copied', c, ''); }
+  if (d) { S.signals.delete(d); renderSignals(); }
+};
+document.querySelector('.tabs').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('show', p.id === b.dataset.p));
+};
+// unlock audio on first interaction (browsers block autoplay)
+addEventListener('pointerdown', () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch {} }, { once: true });
+
+// one cheap timer for "x seconds ago" labels
+setInterval(() => document.querySelectorAll('.ago').forEach(el => el.textContent = ago(+el.dataset.ts)), 1000);
+
+let marketT;
+function restartMarket() { clearInterval(marketT); marketT = setInterval(() => tickMarket(), Math.max(1, +S.set.pollSec) * 1000); }
+
+/* boot */
+renderChips(); syncBtns(); renderWallets(); renderFeed(); renderSignals(); renderKpis();
+refreshSol().then(() => {
+  const mints = [...new Set(S.trades.slice(0, 120).map(t => t.mint))];
+  if (mints.length) fetchMarket(mints).then(() => { renderFeed(); renderWallets(); });
+});
+setInterval(refreshSol, 30000);
+restartMarket();
+if (new URLSearchParams(location.search).has('demo')) setDemo(true);
+else Live.connect();
+setTimeout(backstop, 3000);
+})();
+</script>
+</body>
+</html>
