@@ -3,8 +3,11 @@ URL in Settings makes everything much faster and avoids rate limits."""
 from __future__ import annotations
 
 import itertools
+import threading
 
-from ..http import ApiError, HttpClient
+from ..http import ApiError, HttpClient, _RateLimiter
+
+PUBLIC_RPC_HOSTS = ("api.mainnet-beta.solana.com", "solana-mainnet.rpc.extrnode.com")
 
 
 class SolanaRPC:
@@ -12,10 +15,22 @@ class SolanaRPC:
         self.http = http
         self.url = url.strip()
         self._ids = itertools.count(1)
+        self.public = any(h in self.url for h in PUBLIC_RPC_HOSTS)
+        self._method_limiters: dict[str, _RateLimiter] = {}
+        self._lock = threading.Lock()
+
+    def _throttle(self, method: str) -> None:
+        # Public mainnet RPC: max 10 calls / 10 s per method per IP.
+        if not self.public:
+            return
+        with self._lock:
+            lim = self._method_limiters.setdefault(method, _RateLimiter(0.9))
+        lim.wait()
 
     def call(self, method: str, params: list | None = None):
         body = {"jsonrpc": "2.0", "id": next(self._ids), "method": method, "params": params or []}
-        data = self.http.post(self.url, json=body)
+        self._throttle(method)
+        data = self.http.post(self.url, json=body, retries=8 if self.public else 5)
         if data is None:
             raise ApiError(f"RPC {method}: empty response")
         if "error" in data:

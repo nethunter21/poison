@@ -80,9 +80,9 @@ class HttpClient:
                 continue
             if r.status_code == 429 or r.status_code >= 500:
                 retry_after = r.headers.get("Retry-After")
-                wait = float(retry_after) if retry_after and retry_after.isdigit() else 1.5 * (2 ** attempt)
+                wait = float(retry_after) + 0.5 if retry_after and retry_after.isdigit() else 1.5 * (2 ** attempt)
                 last_err = ApiError(f"{r.status_code} from {urlparse(url).hostname}")
-                time.sleep(min(wait, 20))
+                time.sleep(min(wait, 30))
                 continue
             if r.status_code == 404:
                 return None

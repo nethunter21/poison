@@ -61,6 +61,15 @@ class Engine:
                 progress(f"{name}: {len(mints)} tokens so far")
             except Exception as e:
                 progress(f"{name} failed: {e}")
+        try:  # most-viewed tokens on RugCheck right now (trending attention)
+            for it in self.rug.recent_viewed():
+                m = it.get("mint")
+                if m and m not in profiles:
+                    profiles[m] = {}
+                    mints.append(m)
+            progress(f"RugCheck trending: {len(mints)} tokens so far")
+        except Exception as e:
+            progress(f"RugCheck trending failed: {e}")
         if self.bird.enabled:
             try:
                 for it in self.bird.new_listings(limit=20):
@@ -173,11 +182,17 @@ class Engine:
             progress(f"{sym}: {len(la.buyers)} early buyers, {len(la.snipers)} snipers, {len(la.bundles)} bundles")
             launches.append((sym, la))
         cands = wallets.collect_candidates(launches)
+        tx_limit = self.settings.profile_wallet_tx_limit
+        if self.rpc.public and not self.solscan.enabled:
+            # Free public RPC allows ~1 getTransaction/s: keep the run to a few minutes.
+            profile_top, tx_limit = min(profile_top, 12), min(tx_limit, 40)
+            progress("Public RPC detected – profiling top 12 wallets × 40 tx. Add a free Helius RPC "
+                     "in Settings for full-depth profiling.")
         to_profile = wallets.shortlist(cands, profile_top)
         for i, c in enumerate(to_profile, 1):
             progress(f"Profiling wallet {i}/{len(to_profile)}: {c.address[:6]}… (PnL / win-rate / bot check)")
             c.profile = wallets.profile_wallet(c.address, self.rpc, self.solscan, self.dex,
-                                               self.settings.profile_wallet_tx_limit, self.sol_usd())
+                                               tx_limit, self.sol_usd())
         ranked = wallets.rank_candidates(cands, len(launches), self.settings.early_buyer_count)
         # Only return wallets we actually profiled or that hit multiple tokens
         profiled = {c.address for c in to_profile}

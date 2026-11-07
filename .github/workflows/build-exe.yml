@@ -6,8 +6,12 @@ on:
       - "poison_scanner/**"
       - "main.py"
       - "requirements.txt"
+      - "tests/**"
       - ".github/workflows/build-exe.yml"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -32,7 +36,26 @@ jobs:
       - name: GUI smoke test
         run: python -c "import poison_scanner.gui.app as a; app = a.App(); app.update(); app.destroy(); print('gui ok')"
       - run: python -m PyInstaller --noconfirm --onefile --windowed --name PoisonScanner --collect-all solders main.py
+      - name: EXE smoke test (starts and stays up 8 s)
+        shell: pwsh
+        run: |
+          $p = Start-Process dist\PoisonScanner.exe -PassThru
+          Start-Sleep -Seconds 8
+          if ($p.HasExited) { Write-Error "exe exited early with code $($p.ExitCode)"; exit 1 }
+          Stop-Process -Id $p.Id -Force
+          Write-Host "exe ok"
       - uses: actions/upload-artifact@v4
         with:
           name: PoisonScanner-windows
           path: dist/PoisonScanner.exe
+      - name: Publish exe to the 'exe' branch (direct download link)
+        shell: bash
+        run: |
+          mkdir out && cp dist/PoisonScanner.exe out/
+          cd out
+          git init -q -b exe
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PoisonScanner.exe
+          git commit -qm "PoisonScanner.exe from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" exe

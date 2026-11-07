@@ -107,12 +107,32 @@ def holder_stats(report: dict, pair_address: str = "") -> tuple[float, float, li
     markets = report.get("markets") or []
     pool_like |= {m.get("pubkey") for m in markets} | {pair_address}
     for m in markets:
-        pool_like |= {m.get("liquidityA"), m.get("liquidityB"), m.get("liquidityAAccount"),
-                      m.get("liquidityBAccount")}
+        for k in ("liquidityA", "liquidityB", "liquidityAAccount", "liquidityBAccount"):
+            v = m.get(k)
+            if isinstance(v, dict):
+                pool_like |= {v.get("owner"), v.get("pubkey")}
+            elif isinstance(v, str):
+                pool_like.add(v)
+    pool_like.discard(None)
     real = [h for h in report.get("topHolders") or []
             if h.get("owner") not in pool_like and h.get("address") not in pool_like]
     pcts = sorted((_f(h.get("pct")) for h in real), reverse=True)
     return sum(pcts[:10]), (pcts[0] if pcts else 0.0), real
+
+
+def insider_network_pct(report: dict) -> tuple[float, int]:
+    """% of supply held by RugCheck's funding-linked wallet clusters (small/mid clusters only –
+    giant 'transfer' graphs with hundreds of wallets are usually airdrops/CEX noise)."""
+    supply = _f((report.get("token") or {}).get("supply"))
+    if supply <= 0:
+        return 0.0, 0
+    pct, n = 0.0, 0
+    for net in report.get("insiderNetworks") or []:
+        size = int(net.get("size") or net.get("activeAccounts") or 0)
+        if 3 <= size <= 200:
+            pct += min(100.0, 100 * _f(net.get("currentHolding")) / supply)
+            n += 1
+    return min(pct, 100.0), n
 
 
 def lp_locked_pct(report: dict) -> float | None:
@@ -213,10 +233,13 @@ def evaluate(mint: str, pair: dict | None, rug: dict | None, settings: Settings,
                         12 if creator_pct < 15 else 35))
             else:
                 C(Check("Dev holdings", PASS, f"{creator_pct:.1f}%"))
-        insiders = int(rug.get("graphInsidersDetected") or 0)
-        if insiders >= 3:
-            C(Check("Insider network", WARN if insiders < 10 else FAIL,
-                    f"{insiders} wallets linked by funding graph", 12 if insiders < 10 else 30))
+        net_pct, net_n = insider_network_pct(rug)
+        if net_pct > 25:
+            C(Check("Insider network", FAIL, f"{net_n} linked wallet cluster(s) hold {net_pct:.1f}% of supply", 30))
+        elif net_pct > 10:
+            C(Check("Insider network", WARN, f"{net_n} linked wallet cluster(s) hold {net_pct:.1f}% of supply", 12))
+        elif net_n:
+            C(Check("Insider network", PASS, f"linked clusters hold only {net_pct:.1f}%"))
 
         for risk in rug.get("risks") or []:
             name = risk.get("name") or ""
@@ -296,10 +319,10 @@ def evaluate(mint: str, pair: dict | None, rug: dict | None, settings: Settings,
                 entry_pen += 15
         if r.change_h1 > 400:
             C(Check("Momentum", WARN, f"+{r.change_h1:.0f}% 1h – overextended, chasing top"))
-            entry_pen += 30
+            entry_pen += 45
         elif r.change_m5 < -20 or r.change_h1 < -40:
             C(Check("Momentum", WARN, f"m5 {r.change_m5:+.0f}% / h1 {r.change_h1:+.0f}% – dumping"))
-            entry_pen += 35
+            entry_pen += 45
         elif r.change_h1 > 0:
             C(Check("Momentum", PASS, f"h1 {r.change_h1:+.0f}%, m5 {r.change_m5:+.0f}%"))
         else:
@@ -319,7 +342,8 @@ def evaluate(mint: str, pair: dict | None, rug: dict | None, settings: Settings,
         r.verdict = "AVOID"
     elif not r.has_rugcheck:
         r.verdict = "UNVERIFIED"
-    elif r.score >= settings.min_safety_score and r.entry_score >= 60:
+    elif r.safety_score >= settings.min_safety_score and r.score >= settings.min_safety_score \
+            and r.entry_score >= 70:
         r.verdict = "GOOD ENTRY"
     elif r.safety_score >= settings.min_safety_score:
         r.verdict = "WATCH"

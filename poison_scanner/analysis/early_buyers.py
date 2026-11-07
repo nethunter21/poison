@@ -94,7 +94,13 @@ def fetch_early_swaps(mint: str, pair_address: str | None, rpc, birdeye, max_buy
 
     sigs: dict[str, dict] = {}
     complete = True
-    for addr in filter(None, {mint, pair_address}):
+    # Pump.fun-style tokens: every bonding-curve AND PumpSwap trade references the mint, so the
+    # mint alone covers the whole history. Other DEXes: the pool account is in every swap.
+    if mint.endswith("pump") or not pair_address:
+        addrs = [mint]
+    else:
+        addrs = [pair_address]
+    for addr in addrs:
         progress(f"RPC: walking history of {addr[:6]}…")
         page, done = rpc.oldest_signatures(addr, max_pages=max_pages)
         complete = complete and done

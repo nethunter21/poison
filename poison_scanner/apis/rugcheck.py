@@ -21,3 +21,6 @@ class RugCheck:
 
     def new_tokens(self) -> list[dict]:
         return self.http.get(f"{BASE}/stats/new_tokens", cache_ttl=30) or []
+
+    def recent_viewed(self) -> list[dict]:
+        return self.http.get(f"{BASE}/stats/recent", cache_ttl=60) or []
