@@ -1,0 +1,39 @@
+{
+  "name": "poison-terminal",
+  "productName": "Poison Terminal",
+  "version": "1.0.0",
+  "description": "Ultra-fast Solana memecoin trading terminal with live market data, paper trading, TP/SL and shareable PnL cards.",
+  "main": "main.js",
+  "author": "nethunter21",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64",
+    "dist:portable": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "33.2.0",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.poison.terminal",
+    "productName": "Poison Terminal",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "src/**/*", "build/icon.png", "package.json"],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "PoisonTerminal-${version}-${arch}-${target}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Poison Terminal"
+    },
+    "portable": { "artifactName": "PoisonTerminal-${version}-portable.exe" }
+  }
+}
