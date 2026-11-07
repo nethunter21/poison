@@ -18,22 +18,43 @@
   "build": {
     "appId": "com.poison.terminal",
     "productName": "Poison Terminal",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["main.js", "preload.js", "src/**/*", "build/icon.png", "package.json"],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
-      "icon": "build/icon.png",
-      "artifactName": "PoisonTerminal-${version}-${arch}-${target}.${ext}"
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Poison Terminal"
+      "shortcutName": "Poison Terminal",
+      "artifactName": "PoisonTerminal-Setup-${version}.${ext}"
     },
-    "portable": { "artifactName": "PoisonTerminal-${version}-portable.exe" }
+    "portable": {
+      "artifactName": "PoisonTerminal-${version}-portable.${ext}"
+    }
   }
 }

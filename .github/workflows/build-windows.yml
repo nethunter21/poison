@@ -45,7 +45,7 @@ jobs:
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           body: |
             **Poison Terminal for Windows**
-            - `PoisonTerminal-*-x64-nsis.exe` — installer (Start menu + desktop shortcut)
+            - `PoisonTerminal-Setup-*.exe` — installer (Start menu + desktop shortcut)
             - `PoisonTerminal-*-portable.exe` — single file, no install, just run it
 
             Windows SmartScreen may warn because the exe is not code-signed: click **More info → Run anyway**.

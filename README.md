@@ -8,7 +8,7 @@ A fast Solana memecoin trading terminal for Windows. It has a live market feed, 
 
 1. Open the **Actions** tab, then **Build Windows EXE**, then the latest run. Download the `PoisonTerminal-windows` artifact. You can also go to **Releases** and grab the newest build.
 2. Pick one:
-   - `PoisonTerminal-1.0.0-x64-nsis.exe` is the installer. It adds a Start menu entry and a desktop shortcut.
+   - `PoisonTerminal-Setup-1.0.0.exe` is the installer. It adds a Start menu entry and a desktop shortcut.
    - `PoisonTerminal-1.0.0-portable.exe` is a single file. No install, just run it.
 3. Windows SmartScreen may warn you because the app isn't code-signed. Click **More info**, then **Run anyway**.
 
