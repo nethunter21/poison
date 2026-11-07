@@ -1,0 +1,38 @@
+name: Build Windows EXE
+
+on:
+  push:
+    paths:
+      - "poison_scanner/**"
+      - "main.py"
+      - "requirements.txt"
+      - ".github/workflows/build-exe.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pytest
+      - run: pytest -q
+
+  build:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller
+      - name: GUI smoke test
+        run: python -c "import poison_scanner.gui.app as a; app = a.App(); app.update(); app.destroy(); print('gui ok')"
+      - run: python -m PyInstaller --noconfirm --onefile --windowed --name PoisonScanner --collect-all solders main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PoisonScanner-windows
+          path: dist/PoisonScanner.exe
