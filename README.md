@@ -1,87 +1,76 @@
-# ☣ Poison Terminal
+# ☣ Poison Terminal — memecoin trading trainer
 
-A fast Solana memecoin trading terminal for Windows. It has a live market feed, keyboard-first trading, realistic fills, TP/SL automation, and **PnL cards** you can customize and share.
+A **lightweight, fully offline** Windows trading terminal that simulates a pump.fun / Axiom-style memecoin market so you can practice for real: fast keyboard trading, rugs you must learn to dodge, red flags you must learn to read, and PnL cards to flex your wins.
 
-> **Trading is paper trading.** Market data is real when you're online, and every order is filled against the real pool's AMM math (fees, price impact, slippage). No real funds or private keys are ever touched.
+No internet, no wallet, no keys. Every coin, wallet and candle is simulated on your machine.
 
 ## Download the .exe
 
-1. Open the **Actions** tab, then **Build Windows EXE**, then the latest run. Download the `PoisonTerminal-windows` artifact. You can also go to **Releases** and grab the newest build.
+1. Go to **Releases** (or **Actions → Build Windows EXE → latest run → Artifacts**).
 2. Pick one:
-   - `PoisonTerminal-Setup-1.0.0.exe` is the installer. It adds a Start menu entry and a desktop shortcut.
-   - `PoisonTerminal-1.0.0-portable.exe` is a single file. No install, just run it.
-3. Windows SmartScreen may warn you because the app isn't code-signed. Click **More info**, then **Run anyway**.
+   - `PoisonTerminal-Setup-2.0.0.exe` — installer (Start menu + desktop shortcut)
+   - `PoisonTerminal-2.0.0-portable.exe` — single file, just run it
+3. SmartScreen may warn (app isn't code-signed): **More info → Run anyway**.
 
-Build it yourself on Windows:
+## How realistic is the market?
 
-```bash
-npm install
-npm start        # run in dev
-npm run dist     # outputs dist/*.exe
-```
+Every coin runs on the **real pump.fun bonding curve**: 30 SOL / 1.073B virtual reserves, ~$5K starting MC, graduating at ~85 SOL raised (~$70K MC) and migrating to a **PumpSwap** constant-product pool (0.25% fee). Contracts end in `…pump` like the real thing.
 
-## Features
+Each candle is produced by simulated wallets, each with its own entry, take-profit and panic level: **devs, bundlers, snipers, insiders, KOLs, whales, volume bots and hundreds of retail traders**. Every coin has a hidden fate:
 
-**Market data (live)**
-- 🔥 Trending, ✨ New pairs, 🚀 Surging (5m), 💼 Bags, and ★ Watchlist lists, auto-refreshing
-- Real-time pair updates every 2s from DexScreener, plus candles and the live trade tape from GeckoTerminal
-- Search by symbol or name, or paste a contract address (`Ctrl+K`)
-- If the feeds can't be reached, the app switches to a built-in **simulated market**. That's a constant-product AMM with pumps, dumps, rugs and new launches every few seconds.
+| Fate | What happens | What gives it away |
+|---|---|---|
+| Dead launch (~50%) | never finds buyers, bleeds to the floor | few holders, no socials, dev sells |
+| Sniped & faded | snipers dump on the first wave | high sniper % |
+| **Bundle rug** | bundled wallets dump together (−90%) | bundlers 20–50%, high top-10 |
+| **Dev dump** | dev sells a huge bag in one tx | dev holds 15–35%, serial-rugger dev history |
+| **Fake volume** | a bot trades with itself, then stops | txns ≫ holders, tiny trade sizes |
+| **Migration dump** | insiders sell right after bonding | bundlers + insiders into migration |
+| Organic runner | bonds, runs to $200K–$5M+ with pullbacks | distributed holders, socials, low bundle % |
+| KOL pump | KOL buys, followers chase, KOL sells into them | vertical candle after a 📣 KOL buy |
+| **Cabal bleed** | insiders sell into every pump | high insiders % (not bundled, looks clean) |
+| **Honeypot** | you can't sell, then liquidity is pulled | Raydium (not pump), **freeze authority ON** |
 
-**Trading (realistic paper fills)**
-- Fills are computed from the pool's `x·y=k` reserves, so price impact grows with your size relative to liquidity
-- Platform fee, DEX/LP fee, Solana base fee and **priority fee** are all applied
-- Simulated landing latency. If the price moves past your slippage tolerance before the order lands, the tx **fails and you still pay the fee**, just like on-chain.
-- One-tap buy presets in SOL and sell presets in %, plus ⚡ quick-buy straight from the token list
-- Per-position **TP / SL automation**, and optional auto TP/SL on every new buy
-- 🚨 Panic sell everything (`Shift+Q`)
-- Positions, history, win rate, and CSV export
+The **Token audit** panel shows Top-10 %, Dev %, Bundlers, Snipers, Insiders, Holders, Txns/holder, Mint & Freeze authority, LP status, Dev history, Dev funding and Socials, computed from the actual simulated wallets. When a coin's fate plays out you get a **post-mortem** that explains what happened and which red flags predicted it. A **coach** warns you when you buy into red flags, and your stats track how many rugs you've eaten.
 
-**Chart**
-- Custom GPU-friendly canvas candles: 1s, 1m, 5m, 15m, 1h. MCap or Price view.
-- Your buy and sell markers, an avg-entry line, crosshair with OHLC legend, zoom and pan, and a pulsing animated last price
+## Trading engine
+- Your orders execute inside the pool, so **your size moves the price**
+- Platform fee + pool fee (1% on curve, 0.25% on PumpSwap) + priority fee
+- Landing latency; the tx **fails (fee still paid) if price moves past your slippage**
+- Honeypot sells fail with "account frozen", just like on-chain
+- Per-position **take profit, stop loss, trailing stop, breakeven stop**
+- Your bags (and watched coins) are saved and keep simulating while the app is closed
 
-**PnL card 🎴**
-- 12 animated backgrounds (Auto win/loss, Toxic, Nebula, Inferno, Matrix, Gold, Ice…), or **upload your own image**
-- 4 font styles, left or center layout, SOL or USD, custom accent, glow strength, film grain
-- Toggle each stat: invested, sold, holding, entry → now MC, chart, handle, date, logo
-- Your own handle, avatar and tagline or referral text
-- **Save PNG** (2400×1350), **copy image to clipboard**, or copy ready-to-post share text
-- Make a card for any single trade or for your whole portfolio
-
-**Looks**
-- Glassmorphism panels with a cursor-tracking glow, animated aurora and neon grid background, glitch logo
-- Particle bursts, screen-edge flashes, confetti on big wins, number roll animations, price flash on rows
-- 8 themes plus custom accent, up and down colors, UI scale, compact mode, effects intensity (Crazy, Subtle, Off)
-- Synthesized trade sounds that you can toggle
+## Built for weak laptops
+- **Lite** effects by default: no blur or animated backgrounds, chart capped at ~15 fps and redrawn only on change, off-screen rows skipped, incremental trade tape
+- The whole market simulation (≈80 coins) costs ~40 ms of CPU per minute
+- **Crazy** mode (Settings → Appearance) brings back blur, aurora background, glows and particle overload
 
 ## Keyboard shortcuts (all rebindable in Settings → Shortcuts)
 
 | Key | Action | Key | Action |
 |---|---|---|---|
-| `Ctrl+K` or `/` | Search / commands | `P` | PnL card |
 | `1` `2` `3` `4` | Buy presets | `Q` `W` `E` `R` | Sell presets |
-| `Enter` | Execute order | `X` / `B` / `S` | Toggle side / buy / sell |
-| `↑` `↓` or `J` `K` | Prev/next token | `A` | Focus amount |
-| `T` `N` `G` `H` `V` | Hot/New/Surge/Bags/Watch | `F` | Watchlist ★ |
+| **`L`** | **Arm/disarm stop loss** | `Shift+L` | Arm/disarm take profit |
+| `Shift+B` | Stop to breakeven | `Shift+Q` | Panic sell everything |
+| `↑` `↓` / `J` `K` | Prev/next coin | `←` `→` | Prev/next list |
+| `Alt+←` `Alt+→` | Back / forward through coins | `Enter` | Execute order |
+| `N` `G` `U` | New / Final stretch / Migrated | `T` `H` `V` | Trending / Bags / Watchlist |
+| `Ctrl+K` or `/` | Search & commands | `P` | PnL card |
+| `X` `B` `S` | Toggle / buy / sell side | `A` | Focus amount |
+| `F` | Watchlist ★ | `C` | Copy contract |
 | `[` `]` | Timeframe | `M` | MCap / Price |
-| `C` | Copy contract | `D` | Open DexScreener |
-| `Alt+1/2/3` | Trades/Positions/History | `Z` | Zen mode |
-| `Shift+Q` | Panic sell all | `Ctrl+,` | Settings |
-| `?` | Cheat sheet | `Esc` | Close |
+| `Alt+1/2/3` | Trades / Positions / History | `Z` | Zen mode |
+| `Ctrl+,` | Settings | `?` | Cheat sheet |
 
-In the PnL card: `Ctrl+S` saves the PNG and `Ctrl+C` copies the image.
+Middle-click a coin in a list to quick-buy it.
 
-## Project layout
+## PnL card 🎴
+12 animated backgrounds or your own image, 4 fonts, left/center layout, SOL/USD, custom accent and glow, a toggle for each stat, handle/avatar/tagline. Save as PNG (2400×1350) or copy to clipboard. Works for a single trade or your whole portfolio.
 
-```
-main.js / preload.js   Electron shell (frameless window, secure IPC, image save/copy)
-src/index.html         layout
-src/styles.css         theme + effects
-src/js/data.js         live feeds (DexScreener, GeckoTerminal) + AMM simulator
-src/js/trading.js      paper trading engine, TP/SL
-src/js/chart.js        canvas candlestick chart
-src/js/pnlcard.js      PnL card renderer + editor
-src/js/ui.js           panels, palette, settings
-src/js/keys.js         rebindable shortcuts
+## Build it yourself (Windows)
+```bash
+npm install
+npm start        # run
+npm run dist     # build dist/*.exe
 ```

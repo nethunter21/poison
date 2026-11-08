@@ -16,4 +16,6 @@
   document.addEventListener('dragover', (e) => e.preventDefault());
   document.addEventListener('drop', (e) => e.preventDefault());
   window.addEventListener('error', (e) => console.error('[poison]', e.message));
+  window.addEventListener('beforeunload', () => P.Data.save());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) P.Data.save(); });
 })(window.P);

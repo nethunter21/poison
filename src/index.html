@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src https://api.dexscreener.com https://api.geckoterminal.com; media-src 'self' data:" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' data: blob:; media-src 'self' data:" />
 <title>Poison Terminal</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="fx-high">
+<body class="fx-low">
   <!-- animated background -->
   <div id="bg" aria-hidden="true">
     <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
@@ -23,7 +23,7 @@
       <div class="splash-title glitch" data-text="POISON">POISON</div>
       <div class="splash-sub">memecoin terminal</div>
       <div class="splash-bar"><span></span></div>
-      <div class="splash-status" id="splashStatus">connecting to solana…</div>
+      <div class="splash-status" id="splashStatus">simulating market history…</div>
     </div>
   </div>
 
@@ -31,7 +31,7 @@
     <div class="brand">
       <div class="logo-mark"><i></i><i></i><i></i></div>
       <span class="logo-text glitch" data-text="POISON">POISON</span>
-      <span class="mode-badge" id="modeBadge" title="Data source">LIVE</span>
+      <span class="mode-badge sim" id="modeBadge" title="Offline training market">OFFLINE</span>
     </div>
     <button class="search-trigger nodrag" id="searchBtn">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -64,10 +64,11 @@
     <!-- LEFT: discovery -->
     <aside id="left" class="panel glass enter" style="--d:0">
       <div class="tabs" id="listTabs">
-        <button data-list="trending" class="active" title="Trending (T)">🔥 Hot</button>
-        <button data-list="new" title="New pairs (N)">✨ New</button>
-        <button data-list="surging" title="Surging 5m (G)">🚀 Surge</button>
-        <button data-list="holdings" title="Your bags (H)">💼 Bags</button>
+        <button data-list="new" class="active" title="New pairs (N)">New</button>
+        <button data-list="stretch" title="Final stretch — close to bonding (G)">Stretch</button>
+        <button data-list="migrated" title="Migrated to PumpSwap (U)">Migrated</button>
+        <button data-list="trending" title="Trending (T)">🔥</button>
+        <button data-list="holdings" title="My bags (H)">💼</button>
         <button data-list="watch" title="Watchlist (V)">★</button>
         <span class="tab-ink"></span>
       </div>
@@ -78,10 +79,11 @@
         <select id="listSort" title="Sort">
           <option value="default">Default</option>
           <option value="mc">Market cap</option>
-          <option value="vol">Volume 1h</option>
+          <option value="vol">Volume 5m</option>
           <option value="chg">Change 5m</option>
           <option value="age">Newest</option>
-          <option value="liq">Liquidity</option>
+          <option value="holders">Holders</option>
+          <option value="risk">Lowest risk</option>
         </select>
       </div>
       <div id="tokenList" class="token-list"></div>
@@ -99,11 +101,11 @@
           <div class="chart-legend" id="chartLegend"></div>
           <div class="chart-hint">scroll = zoom · drag = pan · dbl-click = reset</div>
         </div>
-        <div class="chart-box"><canvas id="chart"></canvas><div class="chart-loading" id="chartLoading"><div class="spinner"></div></div></div>
+        <div class="chart-box"><canvas id="chart"></canvas></div>
       </div>
       <div id="bottom" class="panel glass enter" style="--d:3">
         <div class="tabs small" id="bottomTabs">
-          <button data-tab="trades" class="active">Live trades</button>
+          <button data-tab="trades" class="active">Trades</button>
           <button data-tab="positions">Positions</button>
           <button data-tab="history">History</button>
           <span class="tab-ink"></span>
@@ -122,8 +124,8 @@
         </div>
         <div class="trade-body" id="tradeBody"></div>
       </div>
-      <div id="positionPanel" class="panel glass enter" style="--d:2"></div>
-      <div id="infoPanel" class="panel glass enter" style="--d:3"></div>
+      <div id="infoPanel" class="panel glass enter" style="--d:2"></div>
+      <div id="positionPanel" class="panel glass enter" style="--d:3"></div>
     </aside>
   </main>
 

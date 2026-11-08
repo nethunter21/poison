@@ -18,7 +18,7 @@
     customAccent: null,
     upColor: '#1dffa3',
     downColor: '#ff3d71',
-    effects: 'high',
+    effects: 'low',
     bgStyle: 'aurora',
     compact: false,
     scale: 1,
@@ -30,14 +30,14 @@
     slippage: 20,
     priorityFee: 0.001,
     platformFee: 1,
-    dexFee: 0.25,
     latencyMin: 350,
     latencyMax: 900,
     autoTpSl: false,
     tp: 100, tpSell: 50,
-    sl: -35, slSell: 100,
+    sl: -35, slSell: 100, slTrail: false,
+    coach: true,
+    marketPace: 'normal',
     startBalance: 10,
-    dataMode: 'auto',
     confirmLarge: true,
     handle: '@anon',
     chartUnit: 'mc',
@@ -45,6 +45,7 @@
   };
 
   let state = Object.assign({}, DEFAULTS, U.store.get('settings', {}));
+  if (state.ver !== 2) { state.ver = 2; state.effects = 'low'; delete state.dataMode; delete state.dexFee; U.store.set('settings', state); } // v2: lightweight by default
   const ev = U.emitter();
 
   const S = (P.S = {

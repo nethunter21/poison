@@ -1,8 +1,8 @@
 {
   "name": "poison-terminal",
   "productName": "Poison Terminal",
-  "version": "1.0.0",
-  "description": "Ultra-fast Solana memecoin trading terminal with live market data, paper trading, TP/SL and shareable PnL cards.",
+  "version": "2.0.0",
+  "description": "Lightweight offline memecoin trading trainer: realistic pump.fun-style market simulation, rugs, red flags, TP/SL, keyboard trading and shareable PnL cards.",
   "main": "main.js",
   "author": "nethunter21",
   "license": "MIT",

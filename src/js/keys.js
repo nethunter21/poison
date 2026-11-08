@@ -13,27 +13,34 @@
     ['sell3', 'Sell preset 3', 'E', () => UI.sellPreset(2)],
     ['sell4', 'Sell preset 4', 'R', () => UI.sellPreset(3)],
     ['execute', 'Execute order', 'Enter', () => UI.execute()],
+    ['stopLoss', 'Arm / disarm stop loss', 'L', () => UI.toggleSL()],
+    ['takeProfit', 'Arm / disarm take profit', 'Shift+L', () => UI.toggleTP()],
+    ['breakeven', 'Move stop loss to breakeven', 'Shift+B', () => UI.breakeven()],
     ['toggleSide', 'Toggle buy / sell', 'X', () => UI.toggleSide()],
     ['sideBuy', 'Buy tab', 'B', () => UI.setSide('buy')],
     ['sideSell', 'Sell tab', 'S', () => UI.setSide('sell')],
     ['amount', 'Focus amount input', 'A', () => UI.focusAmount()],
-    ['next', 'Next token', 'ArrowDown', () => UI.moveCursor(1)],
-    ['prev', 'Previous token', 'ArrowUp', () => UI.moveCursor(-1)],
-    ['next2', 'Next token (alt)', 'J', () => UI.moveCursor(1)],
-    ['prev2', 'Previous token (alt)', 'K', () => UI.moveCursor(-1)],
-    ['listTrending', 'Trending list', 'T', () => UI.setList('trending')],
-    ['listNew', 'New pairs list', 'N', () => UI.setList('new')],
-    ['listSurging', 'Surging list', 'G', () => UI.setList('surging')],
-    ['listHoldings', 'Holdings list', 'H', () => UI.setList('holdings')],
+    ['next', 'Next coin', 'ArrowDown', () => UI.moveCursor(1)],
+    ['prev', 'Previous coin', 'ArrowUp', () => UI.moveCursor(-1)],
+    ['next2', 'Next coin (alt)', 'J', () => UI.moveCursor(1)],
+    ['prev2', 'Previous coin (alt)', 'K', () => UI.moveCursor(-1)],
+    ['listNextTab', 'Next list', 'ArrowRight', () => UI.cycleList(1)],
+    ['listPrevTab', 'Previous list', 'ArrowLeft', () => UI.cycleList(-1)],
+    ['back', 'Back to previous coin', 'Alt+ArrowLeft', () => UI.back()],
+    ['forward', 'Forward', 'Alt+ArrowRight', () => UI.forward()],
+    ['listNew', 'New pairs', 'N', () => UI.setList('new')],
+    ['listStretch', 'Final stretch', 'G', () => UI.setList('stretch')],
+    ['listMigrated', 'Migrated', 'U', () => UI.setList('migrated')],
+    ['listTrending', 'Trending', 'T', () => UI.setList('trending')],
+    ['listHoldings', 'My bags', 'H', () => UI.setList('holdings')],
     ['listWatch', 'Watchlist', 'V', () => UI.setList('watch')],
     ['watch', 'Add / remove watchlist', 'F', () => UI.toggleWatch()],
     ['pnl', 'PnL card', 'P', () => P.PnL.open()],
     ['copyCA', 'Copy contract address', 'C', () => UI.copyCA()],
-    ['openDex', 'Open on DexScreener', 'D', () => UI.openDex()],
     ['tfPrev', 'Timeframe down', '[', () => UI.cycleTf(-1)],
     ['tfNext', 'Timeframe up', ']', () => UI.cycleTf(1)],
     ['unit', 'Chart: MCap / Price', 'M', () => UI.toggleUnit()],
-    ['tabTrades', 'Bottom: live trades', 'Alt+1', () => UI.setBottom('trades')],
+    ['tabTrades', 'Bottom: trades', 'Alt+1', () => UI.setBottom('trades')],
     ['tabPositions', 'Bottom: positions', 'Alt+2', () => UI.setBottom('positions')],
     ['tabHistory', 'Bottom: history', 'Alt+3', () => UI.setBottom('history')],
     ['panic', 'Panic sell all positions', 'Shift+Q', () => UI.panicSell()],
@@ -43,7 +50,7 @@
     ['fullscreen', 'Fullscreen', 'F11', () => window.native ? window.native.fullscreen() : document.documentElement.requestFullscreen?.()]
   ];
   const DEFAULT = Object.fromEntries(ACTIONS.map((a) => [a[0], a[2]]));
-  let map = Object.assign({}, DEFAULT, U.store.get('keymap', {}));
+  let map = Object.assign({}, DEFAULT, Object.fromEntries(Object.entries(U.store.get('keymap', {})).filter(([k]) => k in DEFAULT)));
   let lookup = {};
   const rebuild = () => { lookup = {}; for (const [id, k] of Object.entries(map)) if (k) lookup[k] = id; };
   rebuild();

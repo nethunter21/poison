@@ -99,9 +99,18 @@ window.P = window.P || {};
   };
   U.avatar = (t, size = '') => {
     const [c1, c2] = U.tokenColors(t.address || t.symbol);
-    const initials = U.esc((t.symbol || '?').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2).toUpperCase() || '?');
-    const img = t.image ? `<img src="${U.esc(t.image)}" loading="lazy" referrerpolicy="no-referrer" alt="">` : '';
-    return `<div class="avatar ${size}" style="background:linear-gradient(135deg,${c1},${c2})">${initials}${img ? `<span style="position:absolute;inset:0">${img}</span>` : ''}</div>`;
+    const inner = t.emoji ? `<span class="emo">${t.emoji}</span>` : U.esc((t.symbol || '?').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2).toUpperCase() || '?');
+    return `<div class="avatar ${size}" style="background:linear-gradient(135deg,${c1},${c2})">${inner}</div>`;
+  };
+
+  // trailing throttle: run at most once per `ms`
+  U.throttle = (f, ms) => {
+    let last = 0, t = null;
+    return (...a) => {
+      const now = Date.now(), wait = last + ms - now;
+      if (wait <= 0) { last = now; f(...a); }
+      else if (!t) t = setTimeout(() => { t = null; last = Date.now(); f(...a); }, wait);
+    };
   };
 
   // ---------- sparkline svg ----------
@@ -119,9 +128,6 @@ window.P = window.P || {};
   };
 
   // ---------- storage ----------
-  // broken token images fall back to the gradient initials (no inline handlers: CSP)
-  document.addEventListener('error', (e) => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest('.avatar')) t.remove(); }, true);
-
   U.store = {
     get(k, def) {
       try { const v = localStorage.getItem('poison:' + k); return v == null ? def : JSON.parse(v); } catch { return def; }

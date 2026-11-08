@@ -40,8 +40,7 @@
     if (imgCache.has(src)) return imgCache.get(src);
     const p = (async () => {
       let url = src;
-      if (/^https?:/.test(src) && window.native && window.native.fetchImage) url = (await window.native.fetchImage(src)) || null;
-      if (!url) return null;
+      if (!/^(data|blob):/.test(url)) return null; // offline: only local images
       return await new Promise((res) => {
         const im = new Image();
         if (/^https?:/.test(url)) im.crossOrigin = 'anonymous';
@@ -125,10 +124,7 @@
     v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
     if (o.grain) {
-      const r2 = rng(99 + Math.floor(t * 8));
-      ctx.globalAlpha = 0.05;
-      for (let i = 0; i < 2600; i++) { ctx.fillStyle = r2() > 0.5 ? '#fff' : '#000'; ctx.fillRect(r2() * W, r2() * H, 1.5, 1.5); }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 0.06; ctx.drawImage(grainCanvas(), 0, 0); ctx.globalAlpha = 1;
     }
   }
 
@@ -268,6 +264,15 @@
     ctx.restore();
   }
 
+  let _grain = null;
+  function grainCanvas() {
+    if (_grain) return _grain;
+    _grain = document.createElement('canvas'); _grain.width = W; _grain.height = H;
+    const g = _grain.getContext('2d'), r2 = rng(99);
+    for (let i = 0; i < 3000; i++) { g.fillStyle = r2() > 0.5 ? '#fff' : '#000'; g.fillRect(r2() * W, r2() * H, 1.5, 1.5); }
+    return _grain;
+  }
+
   function drawAvatar(ctx, img, d, cx, cy, r) {
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath();
@@ -277,6 +282,7 @@
     ctx.fillStyle = g; ctx.fill(); ctx.shadowBlur = 0;
     ctx.clip();
     if (img) ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2);
+    else if (d.emoji) { ctx.font = `${r * 1.15}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(d.emoji, cx, cy + r * 0.08); ctx.textBaseline = 'alphabetic'; }
     else { ctx.fillStyle = '#fff'; ctx.font = `900 ${r * 0.8}px ${FONTS.modern.f}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText((d.symbol || '?').slice(0, 2).toUpperCase(), cx, cy + 2); ctx.textBaseline = 'alphabetic'; }
     ctx.restore();
     ctx.beginPath(); ctx.arc(cx, cy, r + 1.5, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2; ctx.stroke();
@@ -294,11 +300,11 @@
     const m = P.Trade.metrics(p);
     const t = P.Data.get(p.address);
     let ticks = null;
-    if (t && t.sim && t.m1) ticks = t.m1.filter((b) => b.t * 1000 >= p.firstAt - 120000).map((b) => b.c);
+    if (t && t.m1) ticks = t.m1.filter((b) => b.t * 1000 >= p.firstAt - 120000).map((b) => b.c);
     if ((!ticks || ticks.length < 3) && P.UI && P.UI.chartCloses) ticks = P.UI.chartCloses(p.address);
     if (!ticks || ticks.length < 3) ticks = t && t.ticks && t.ticks.length > 2 ? t.ticks : null;
     return {
-      symbol: p.symbol, name: p.name, address: p.address, image: p.image,
+      symbol: p.symbol, name: p.name, address: p.address, image: null, emoji: p.emoji,
       pnl: m.total, pnlPct: m.totalPct, pnlUsd: m.totalUsd, invested: p.invested, sold: p.sold, holding: p.tokens > 0 ? m.value : 0,
       entryMc: m.avgEntryMc, mc: m.mc, solUsd, date: p.closedAt || Date.now(), duration: fmtDur((p.closedAt || Date.now()) - p.firstAt), ticks
     };
@@ -340,7 +346,6 @@
 
     function refreshImgs() {
       data = cardData(sel);
-      loadImg(data && data.image).then((i) => (imgs.token = i));
       loadImg(opt.avatar).then((i) => (imgs.avatar = i));
       loadImg(opt.customBg).then((i) => (imgs.bg = i));
     }
@@ -376,7 +381,7 @@
       inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => cb(r.result); r.readAsDataURL(f); };
       inp.click();
     }
-    function update() { saveOpt(); sideHtml(); refreshImgs(); }
+    function update() { saveOpt(); sideHtml(); refreshImgs(); setTimeout(() => paint(true), 30); }
 
     side.addEventListener('click', (e) => {
       const el = e.target.closest('[data-bg],[data-tog],[data-grain],[data-sel],[data-seg] button,[data-act]');
@@ -400,6 +405,7 @@
       if (el.dataset.range) { opt[el.dataset.range] = +el.value; el.previousElementSibling.textContent = (el.dataset.range === 'glow' ? 'Glow ' : 'Dim ') + el.value + '%'; saveOpt(); }
       else if (el.dataset.color) { opt.accent = el.value; saveOpt(); }
       else if (el.dataset.text) { opt[el.dataset.text] = el.value; saveOpt(); }
+      paint(true);
     });
     side.addEventListener('change', (e) => { const el = e.target; if (el.dataset.selOpt) { opt[el.dataset.selOpt] = el.value; update(); } });
 
@@ -432,14 +438,17 @@
     }
     back.querySelector('.pnlm-actions').addEventListener('click', (e) => { const b = e.target.closest('[data-act]'); if (b) act(b.dataset.act); });
 
-    function frame() {
-      if (!data) { data = cardData(sel); }
-      if (data) {
-        const fresh = cardData(sel); if (fresh) data = fresh;
-        const animate = S.get('effects') !== 'off';
-        render(ctx, data, opt, animate ? (performance.now() - t0) / 1000 : 4, imgs);
+    let lastR = 0, lastData = 0;
+    function frame() { paint(false); raf = requestAnimationFrame(frame); }
+    function paint(force) {
+      const now = performance.now();
+      const animate = S.get('effects') === 'high';
+      // Lite: redraw ~1/s (data refresh) or right after an option change; Crazy: ~30 fps animation
+      if (force === true || (animate && now - lastR > 33) || now - lastR > 1000) {
+        if (force === true || now - lastData > 1000) { const fresh = cardData(sel); if (fresh) data = fresh; lastData = now; }
+        if (data) render(ctx, data, Object.assign({}, opt, { _static: !animate }), animate ? (now - t0) / 1000 : 4, imgs);
+        lastR = now;
       }
-      raf = requestAnimationFrame(frame);
     }
     function close() {
       cancelAnimationFrame(raf);

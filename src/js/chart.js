@@ -98,19 +98,25 @@
     }
     frame() {
       this.frameN++;
+      if (document.hidden) return;
+      const fx = P.S ? P.S.get('effects') : 'low';
+      const hi = fx === 'high';
       const last = this.data[this.data.length - 1];
       let animating = false;
-      if (last && this.disp != null && Math.abs(this.disp - last.c) > Math.abs(last.c) * 1e-6) {
+      if (hi && last && this.disp != null && Math.abs(this.disp - last.c) > Math.abs(last.c) * 1e-6) {
         this.disp += (last.c - this.disp) * 0.25; animating = true;
       } else if (last) this.disp = last.c;
-      const fx = P.S ? P.S.get('effects') : 'high';
-      const pulse = fx === 'high' && this.frameN % 2 === 0;
+      const pulse = hi && this.frameN % 2 === 0;
       if (!this.dirty && !animating && !pulse) return;
+      const now = performance.now();
+      if (now - (this.lastDraw || 0) < (hi ? 16 : 66)) return; // Lite: max ~15 fps, only when something changed
+      this.lastDraw = now;
       this.dirty = false;
       this.draw();
     }
     draw() {
       const ctx = this.ctx, W = this.w, H = this.h, dpr = this.dpr, col = this.col, m = this.mult;
+      this.hi = P.S.get('effects') === 'high';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       const axisW = 76, axisH = 22;
@@ -217,7 +223,7 @@
         const x = xOf(i), y = yOf(mk.price);
         const buy = mk.side === 'buy', c = buy ? col.up : col.down;
         ctx.save();
-        ctx.shadowColor = c; ctx.shadowBlur = 10; ctx.fillStyle = c;
+        if (this.hi) { ctx.shadowColor = c; ctx.shadowBlur = 10; } ctx.fillStyle = c;
         ctx.beginPath();
         if (buy) { ctx.moveTo(x, y + 6); ctx.lineTo(x - 6, y + 16); ctx.lineTo(x + 6, y + 16); }
         else { ctx.moveTo(x, y - 6); ctx.lineTo(x - 6, y - 16); ctx.lineTo(x + 6, y - 16); }
@@ -243,7 +249,7 @@
           ctx.beginPath(); ctx.arc(lx + 0.5, ly, 3 + t * 12, 0, Math.PI * 2);
           ctx.strokeStyle = lc; ctx.globalAlpha = 1 - t; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1;
         }
-        ctx.beginPath(); ctx.arc(lx + 0.5, ly, 3, 0, Math.PI * 2); ctx.fillStyle = lc; ctx.shadowColor = lc; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.arc(lx + 0.5, ly, 3, 0, Math.PI * 2); ctx.fillStyle = lc; if (this.hi) { ctx.shadowColor = lc; ctx.shadowBlur = 12; } ctx.fill(); ctx.shadowBlur = 0;
       }
       this.axisLabel(ly, this.fmt(lp * m), lc, '#04110a');
 

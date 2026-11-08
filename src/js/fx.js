@@ -16,9 +16,12 @@
   resize();
   addEventListener('resize', resize);
 
-  FX.level = () => (P.S ? P.S.get('effects') : 'high');
+  FX.level = () => (P.S ? P.S.get('effects') : 'low');
 
+  let monoFont = null;
   function loop() {
+    const hi = FX.level() === 'high';
+    if (!monoFont) monoFont = getComputedStyle(document.body).getPropertyValue('--mono');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     const next = [];
@@ -34,14 +37,14 @@
         ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore();
       } else if (p.kind === 'ring') {
         p.s += p.grow;
-        ctx.strokeStyle = p.c; ctx.lineWidth = 2.5 * a; ctx.shadowColor = p.c; ctx.shadowBlur = 18;
+        ctx.strokeStyle = p.c; ctx.lineWidth = 2.5 * a; if (hi) { ctx.shadowColor = p.c; ctx.shadowBlur = 18; }
         ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2); ctx.stroke(); ctx.shadowBlur = 0;
       } else if (p.kind === 'text') {
-        ctx.font = `900 ${p.s}px ${getComputedStyle(document.body).getPropertyValue('--mono')}`;
-        ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 16; ctx.textAlign = 'center';
+        ctx.font = `900 ${p.s}px ${monoFont}`;
+        ctx.fillStyle = p.c; if (hi) { ctx.shadowColor = p.c; ctx.shadowBlur = 16; } ctx.textAlign = 'center';
         ctx.fillText(p.text, p.x, p.y); ctx.shadowBlur = 0;
       } else {
-        ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 10;
+        ctx.fillStyle = p.c; if (hi) { ctx.shadowColor = p.c; ctx.shadowBlur = 10; }
         ctx.beginPath(); ctx.arc(p.x, p.y, p.s * a, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
       }
       next.push(p);
@@ -105,7 +108,7 @@
     if (!el) return;
     const prev = el._v;
     el._v = value;
-    if (prev == null || !isFinite(prev) || FX.level() === 'off' || prev === value) { el.textContent = fmt(value); return; }
+    if (prev == null || !isFinite(prev) || FX.level() !== 'high' || prev === value) { const s = fmt(value); if (el.textContent !== s) el.textContent = s; return; }
     const start = performance.now();
     cancelAnimationFrame(el._raf);
     const step = (t) => {
@@ -118,7 +121,7 @@
   };
 
   FX.tickClass = (el, dir) => {
-    if (!el || !dir) return;
+    if (!el || !dir || FX.level() !== 'high') return;
     el.classList.remove('tick-up', 'tick-down');
     void el.offsetWidth;
     el.classList.add(dir > 0 ? 'tick-up' : 'tick-down');
@@ -126,6 +129,7 @@
 
   // ---------- spotlight hover on glass panels ----------
   document.addEventListener('mousemove', U.rafThrottle((e) => {
+    if (FX.level() !== 'high') return;
     const g = e.target.closest && e.target.closest('.glass');
     if (FX._lastGlass && FX._lastGlass !== g) { FX._lastGlass.style.setProperty('--mx', '-500px'); FX._lastGlass.style.setProperty('--my', '-500px'); }
     if (g) {
