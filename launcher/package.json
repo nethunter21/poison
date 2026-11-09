@@ -7,7 +7,8 @@
   "scripts": {
     "start": "electron .",
     "serve": "python3 -m http.server 8765",
-    "dist:win": "electron-builder --win portable nsis --x64"
+    "dist:win": "node scripts/prepare-mods.js && electron-builder --win portable nsis --x64",
+    "prepare:mods": "node scripts/prepare-mods.js"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -58,6 +59,16 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "shortcutName": "POISON Client"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "build/mods",
+        "to": "mods",
+        "filter": [
+          "*.jar",
+          "manifest.json"
+        ]
+      }
+    ]
   }
 }

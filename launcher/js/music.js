@@ -65,6 +65,57 @@
       audioEl.addEventListener('ended', () => onEnd());
       return ctx;
     }
+    /**
+     * Render a built-in track to 16-bit stereo WAV with an OfflineAudioContext, using the exact
+     * same instruments/sequencer as live playback. Used to bake the in-game POISON FM tracks.
+     */
+    async function renderTrack(i, sampleRate = 44100) {
+      const tr = TRACKS[i];
+      const dur = (tr.bars * 4 * 60) / tr.bpm + 3;
+      const saved = { ctx, master, comp, analyser, eq, reverb, revGain, delay, delayFb, delayGain, noiseBuf };
+      const off = new OfflineAudioContext(2, Math.ceil(dur * sampleRate), sampleRate);
+      ctx = off;
+      try {
+        const low = off.createBiquadFilter(); low.type = 'lowshelf'; low.frequency.value = 180;
+        const mid = off.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 1200; mid.Q.value = 0.8;
+        const high = off.createBiquadFilter(); high.type = 'highshelf'; high.frequency.value = 5000;
+        eq = [low, mid, high];
+        comp = off.createDynamicsCompressor();
+        comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.2;
+        master = off.createGain(); master.gain.value = 0.9;
+        low.connect(mid); mid.connect(high); high.connect(comp); comp.connect(master); master.connect(off.destination);
+        reverb = off.createConvolver(); reverb.buffer = impulse(2.8);
+        revGain = off.createGain(); revGain.gain.value = 0.28; reverb.connect(revGain); revGain.connect(low);
+        delay = off.createDelay(1.5); delayFb = off.createGain(); delayFb.gain.value = 0.38; delayGain = off.createGain(); delayGain.gain.value = 0.3;
+        delay.connect(delayFb); delayFb.connect(delay); delay.connect(delayGain); delayGain.connect(low);
+        noiseBuf = off.createBuffer(1, sampleRate, sampleRate);
+        const nd = noiseBuf.getChannelData(0);
+        for (let k = 0; k < nd.length; k++) nd[k] = Math.random() * 2 - 1;
+        const sixteenth = 60 / tr.bpm / 4;
+        let t = 0.05;
+        for (let s = 0; s < totalSteps(tr); s++) {
+          playStep(tr, s, t);
+          t += sixteenth * (s % 2 === 1 && tr.style === 'lofi' ? 0.88 : s % 2 === 0 && tr.style === 'lofi' ? 1.12 : 1);
+        }
+        const buf = await off.startRendering();
+        return { title: tr.title, artist: tr.artist, wav: toWav(buf) };
+      } finally {
+        ({ ctx, master, comp, analyser, eq, reverb, revGain, delay, delayFb, delayGain, noiseBuf } = saved);
+      }
+    }
+    function toWav(buf) {
+      const ch = buf.numberOfChannels, n = buf.length, sr = buf.sampleRate;
+      const out = new DataView(new ArrayBuffer(44 + n * ch * 2));
+      const str = (o, s) => { for (let k = 0; k < s.length; k++) out.setUint8(o + k, s.charCodeAt(k)); };
+      str(0, 'RIFF'); out.setUint32(4, 36 + n * ch * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+      out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, ch, true); out.setUint32(24, sr, true);
+      out.setUint32(28, sr * ch * 2, true); out.setUint16(32, ch * 2, true); out.setUint16(34, 16, true); str(36, 'data'); out.setUint32(40, n * ch * 2, true);
+      const data = [];
+      for (let c = 0; c < ch; c++) data.push(buf.getChannelData(c));
+      let o = 44;
+      for (let k = 0; k < n; k++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, data[c][k])); out.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2; }
+      return out.buffer;
+    }
     function impulse(sec) {
       const len = ctx.sampleRate * sec, b = ctx.createBuffer(2, len, ctx.sampleRate);
       for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
@@ -289,7 +340,7 @@
     requestAnimationFrame(beatLoop);
 
     return {
-      tracks, play, pause, resume, toggle, next, prev, seek, setVolume, setEq, spectrum, waveform, addFiles, duration, position,
+      tracks, play, pause, resume, toggle, next, prev, seek, setVolume, setEq, spectrum, waveform, addFiles, duration, position, renderTrack,
       get playing() { return playing; },
       get index() { return idx; },
       set index(v) { idx = v; },

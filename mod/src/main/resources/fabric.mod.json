@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "poison",
+  "version": "${version}",
+  "name": "POISON Client",
+  "description": "Legit PvP client: client menu, HUD, motion blur, butterfly knife, self chams, music player.",
+  "authors": ["POISON"],
+  "license": "MIT",
+  "icon": "assets/poison/icon.png",
+  "environment": "client",
+  "entrypoints": { "client": ["gg.poison.client.PoisonClient"] },
+  "mixins": ["poison.mixins.json"],
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "~1.21.4", "java": ">=21", "fabric-api": "*" }
+}

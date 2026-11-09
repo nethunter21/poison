@@ -71,7 +71,7 @@
 
   /* ---------------- persistent state ---------------- */
   const defaults = {
-    profile: { name: 'Satoshi_PvP', version: '1.8.9', loader: 'Fabric' },
+    profile: { name: 'Satoshi_PvP', version: '1.21.4', loader: 'Fabric' },
     launcher: {
       accent: '#ff8a00', accent2: '#ff2e88', theme: 'poison', rgb: false,
       bg: 'network', quality: 'ultra', cursor: true, sparks: true, sfx: true, splash: true,

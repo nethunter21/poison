@@ -1,0 +1,6 @@
+01.ogg=Satoshi's Dream
+02.ogg=Diamond Hands
+03.ogg=Gas Fees (Night Drive)
+04.ogg=To The Moon
+05.ogg=Rug Pull Requiem
+06.ogg=Cold Wallet

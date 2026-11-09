@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['launcher/**', '.github/workflows/build-windows.yml']
+    paths: ['launcher/**', 'mod/**', '.github/workflows/build-windows.yml']
 
 jobs:
   build:
@@ -14,12 +14,17 @@ jobs:
         working-directory: launcher
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: launcher/package-lock.json
       - run: npm ci
+      - run: node scripts/prepare-mods.js   # builds ../mod and fetches Fabric API into build/mods
       - run: npx electron-builder --win portable nsis --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:

@@ -104,6 +104,7 @@
                   </select>
                   <select id="loaderSelect"><option>Fabric</option><option>Vanilla</option></select>
                 </div>
+                <div class="poison-badge" id="poisonBadge" hidden></div>
               </div>
             </div>
             <button type="button" class="launch-btn magnetic" id="launchBtn">
@@ -313,12 +314,19 @@
             <button type="button" class="btn ghost" data-folder="game">📁 Game folder</button>
             <button type="button" class="btn ghost" data-folder="mods">🧩 Mods folder (Fabric)</button>
             <button type="button" class="btn ghost" data-folder="screenshots">🖼 Screenshots</button>
+            <button type="button" class="btn ghost" data-folder="music">♫ Music folder (.ogg / .wav)</button>
           </div>
           <p class="muted small" id="gameDirLine"></p>
         </div>
         <div class="set-card glass">
           <div class="card-h"><b>Keybinds</b><span>click to rebind</span></div>
           <div class="set-row inline"><label>Client menu</label><button type="button" class="keybind" id="guiKey"></button></div>
+          <div class="card-h"><b>In game</b><span>rebind in Options → Controls → POISON</span></div>
+          <div class="binds">
+            <div><kbd>RShift</kbd> client menu</div><div><kbd>R</kbd> flip knife</div><div><kbd>I</kbd> inspect knife</div><div><kbd>Z</kbd> zoom (scroll = adjust)</div>
+            <div><kbd>[</kbd> <kbd>]</kbd> prev / next track</div><div><kbd>\</kbd> play / pause music</div><div><kbd>F5</kbd> third person (self chams)</div><div><kbd>Q Q</kbd> drop sword (HODL)</div>
+          </div>
+          <div class="card-h"><b>Launcher preview</b><span>3D client page</span></div>
           <div class="binds">
             <div><kbd>F</kbd> flip knife</div><div><kbd>I</kbd> inspect</div><div><kbd>C</kbd> zoom</div><div><kbd>V</kbd> perspective</div>
             <div><kbd>B</kbd> emote wheel</div><div><kbd>1-9</kbd> hotbar (flip on swap)</div><div><kbd>Esc</kbd> close menus</div><div><kbd>↑↑↓↓←→←→BA</kbd> ???</div>

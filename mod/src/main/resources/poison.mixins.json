@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "gg.poison.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ClientPlayerEntityMixin",
+    "ClientWorldPropertiesMixin",
+    "EntityMixin",
+    "GameRendererMixin",
+    "HeldItemRendererMixin",
+    "InGameHudMixin",
+    "InGameOverlayRendererMixin",
+    "MinecraftClientMixin",
+    "MouseMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}

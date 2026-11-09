@@ -82,6 +82,30 @@ async function ensureFabric(gameVersion, root) {
   return profile.id;
 }
 
+/**
+ * Install (or remove) the bundled POISON in-game mod + Fabric API in <root>/mods.
+ * Only our own managed files are touched; the user's mods are left alone.
+ * @returns true when POISON is active for this launch
+ */
+function syncPoisonMods(gameVersion, fabricActive, root, bundledDir) {
+  const modsDir = path.join(root, 'mods');
+  const managed = { mod: path.join(modsDir, 'poison-client.jar'), api: path.join(modsDir, 'poison-fabric-api.jar') };
+  let manifest = null;
+  try { manifest = JSON.parse(fs.readFileSync(path.join(bundledDir, 'manifest.json'), 'utf8')); } catch { /* not bundled */ }
+  const supported = !!manifest && fabricActive && gameVersion === manifest.minecraft;
+  if (!supported) {
+    for (const f of Object.values(managed)) fs.rmSync(f, { force: true });
+    return false;
+  }
+  fs.mkdirSync(modsDir, { recursive: true });
+  fs.copyFileSync(path.join(bundledDir, 'poison-client.jar'), managed.mod);
+  // don't add a second Fabric API if the user already installed one themselves
+  const userApi = fs.readdirSync(modsDir).some((f) => /^fabric-api.*\.jar$/i.test(f));
+  if (userApi) fs.rmSync(managed.api, { force: true });
+  else fs.copyFileSync(path.join(bundledDir, 'fabric-api.jar'), managed.api);
+  return true;
+}
+
 /* simple Java-style arg splitting that respects quotes */
 function splitArgs(str) {
   const out = [];
@@ -122,6 +146,12 @@ async function launch(opts, emit) {
     }
   }
 
+  let poisonActive = false;
+  if (opts.bundledModsDir) {
+    poisonActive = syncPoisonMods(opts.version, !!custom, root, opts.bundledModsDir);
+    emit('progress', { stage: 'fabric', text: poisonActive ? 'POISON in-game client installed' : 'Launching without the POISON in-game mod', done: 1, total: 1 });
+  }
+
   const client = new Client();
   const ram = Math.max(1024, opts.ram | 0);
   const launchOpts = {
@@ -142,7 +172,7 @@ async function launch(opts, emit) {
     client.on('debug', (line) => { emit('log', String(line)); lastLines.push(String(line)); lastLines = lastLines.slice(-20); });
     client.on('data', (line) => {
       emit('log', String(line));
-      if (!started) { started = true; emit('progress', { stage: 'running', text: 'Game running', done: 1, total: 1 }); resolve({ ok: true }); }
+      if (!started) { started = true; emit('progress', { stage: 'running', text: 'Game running', done: 1, total: 1 }); resolve({ ok: true, poison: poisonActive }); }
     });
     client.on('close', (code) => {
       emit('exit', { code });
@@ -154,4 +184,4 @@ async function launch(opts, emit) {
   });
 }
 
-module.exports = { listVersions, launch, splitArgs };
+module.exports = { listVersions, launch, splitArgs, syncPoisonMods };

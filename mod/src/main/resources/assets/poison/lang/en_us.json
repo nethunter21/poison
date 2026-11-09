@@ -1,0 +1,10 @@
+{
+ "key.categories.poison": "POISON Client",
+ "key.poison.menu": "Client menu",
+ "key.poison.flip": "Flip butterfly knife",
+ "key.poison.inspect": "Inspect knife",
+ "key.poison.zoom": "Zoom",
+ "key.poison.music_prev": "Music: previous",
+ "key.poison.music_next": "Music: next",
+ "key.poison.music_pause": "Music: play / pause"
+}

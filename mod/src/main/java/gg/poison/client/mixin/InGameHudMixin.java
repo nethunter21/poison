@@ -1,0 +1,19 @@
+package gg.poison.client.mixin;
+
+import gg.poison.client.render.MotionBlur;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.hud.InGameHud;
+import net.minecraft.client.render.RenderTickCounter;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/** Motion blur is composited right after the world, before any HUD, so the HUD stays sharp. */
+@Mixin(InGameHud.class)
+public class InGameHudMixin {
+    @Inject(method = "render", at = @At("HEAD"))
+    private void poison$motionBlur(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+        MotionBlur.apply(context);
+    }
+}

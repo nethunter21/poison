@@ -61,12 +61,13 @@
 
   /* ---------------- home ---------------- */
   const NEWS = [
+    ['NEW', 'POISON in-game client for 1.21.4 + Fabric: menu, HUD, motion blur, knife, chams, music'],
+    ['NEW', 'Sign in with Microsoft; Java + game files download automatically'],
     ['NEW', 'Butterfly knife replaces swords, with 8 animations and 9 skins'],
     ['NEW', 'Shutter-accurate motion blur, up to 32 sub-frames'],
     ['NEW', 'In-game music player with live-synthesized tracks'],
     ['FX', 'HDR bloom, chromatic aberration, filmic tonemap, letterbox'],
     ['FX', 'Self, hand and item chams. Your own model only, 100% legit'],
-    ['FIX', 'Mouse delay fix + raw input for 1.8.9'],
     ['CRYPTO', 'Daily $PSN airdrop and proof-of-click miner (play-money)'],
   ];
   function renderHome() {
@@ -93,7 +94,8 @@
   }
   function updateLaunchSub() {
     const fx = P.moduleDefs.filter((m) => P.isOn(m.id)).length;
-    U.$('#launchSub').textContent = `${P.state.profile.version} · ${(P.state.launcher.ram / 1024).toFixed(1)} GB · ${fx} modules`;
+    const needsLogin = U.$('#launchBtn').classList.contains('needs-login');
+    U.$('#launchSub').textContent = needsLogin ? 'sign in with Microsoft first' : `${P.state.profile.version} · ${(P.state.launcher.ram / 1024).toFixed(1)} GB · ${fx} modules`;
   }
   function updateStats() {
     const on = P.moduleDefs.filter((m) => P.isOn(m.id)).length;
@@ -140,6 +142,7 @@
     drawSkinFace(cur && cur.skin);
     if (cur) { P.state.profile.name = cur.name; P.save(); P.emit('module', { id: 'nametag' }); }
     U.$('#launchBtn').classList.toggle('needs-login', !cur);
+    updateLaunchSub();
   }
   async function doLogin() {
     const btns = [U.$('#msLogin'), U.$('#msAdd')];
@@ -174,6 +177,26 @@
     } else P.toast('Offline', 'Could not load the version list from Mojang. Check your connection.', 'error', '!');
     const info = await native.info();
     U.$('#gameDirLine').textContent = 'Game folder: ' + info.gameDir;
+    // POISON in-game badge: the bundled mod targets one game version with Fabric
+    const badge = U.$('#poisonBadge');
+    const syncBadge = () => {
+      if (!info.poisonFor) { badge.hidden = true; return; }
+      const on = P.state.profile.version === info.poisonFor && U.$('#loaderSelect').value === 'Fabric';
+      badge.hidden = false;
+      badge.classList.toggle('on', on);
+      badge.innerHTML = on
+        ? `<i>☠</i> POISON in-game client <b>ON</b>: menu, HUD, motion blur, knife, chams, music`
+        : `<i>○</i> POISON in-game needs <b>${info.poisonFor} + Fabric</b>. <button type="button" class="link-btn" id="poisonSwitch">switch</button>`;
+      const sw = U.$('#poisonSwitch');
+      if (sw) sw.addEventListener('click', () => {
+        if (![...vs.options].some((o) => o.value === info.poisonFor)) vs.insertAdjacentHTML('afterbegin', `<option>${info.poisonFor}</option>`);
+        vs.value = info.poisonFor; U.$('#loaderSelect').value = 'Fabric';
+        P.state.profile.version = info.poisonFor; P.state.profile.loader = 'Fabric'; P.save(); updateLaunchSub(); syncBadge(); P.sfx('on');
+      });
+    };
+    vs.addEventListener('change', syncBadge);
+    U.$('#loaderSelect').addEventListener('change', syncBadge);
+    syncBadge();
     U.$$('[data-folder]').forEach((b) => b.addEventListener('click', () => native.openFolder(b.dataset.folder)));
     native.onExit(({ code }) => {
       P.toast('Minecraft closed', code ? `Exit code ${code}. Open the game folder, then logs, for details.` : 'See you next session', code ? 'error' : 'off', code ? '!' : '☠');

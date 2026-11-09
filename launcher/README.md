@@ -20,7 +20,7 @@ Opening `index.html` straight from disk works too. Everything is plain scripts w
 cd launcher
 npm install
 npm start                 # run the desktop app from source
-npm run dist:win          # -> dist/POISON-Client-1.4.2-portable.exe (+ setup.exe when built on Windows)
+npm run dist:win          # builds ../mod (JDK 21), then dist/POISON-Client-1.4.2-portable.exe (+ setup.exe on Windows)
 ```
 
 The `Build POISON Client (Windows)` GitHub Action builds the portable exe **and** the installer on a Windows runner (Actions tab → Run workflow → download the artifact).
@@ -73,10 +73,24 @@ launcher/
   build/              icon + exe resource stamping hook
 ```
 
+## POISON in-game (Minecraft 1.21.4 + Fabric)
+
+The exe ships the **POISON Fabric mod** ([`../mod`](../mod)) plus Fabric API. Choose **1.21.4 + Fabric** (the home screen badge turns green; one click switches) and the launcher installs them into the game's `mods` folder automatically. For other versions it removes its own files so they can't break anything; your own mods are never touched.
+
+In game you get 26 legit modules, all real and all toggleable from the **Right Shift** client menu (draggable panels, sliders, modes, colors, search):
+
+- **Motion blur:** accumulation blur composited before the HUD, so the HUD stays sharp, with strength and FPS-independent options.
+- **Butterfly knife:** every sword becomes an animated balisong in first person: flip (**R**), inspect (**I**), idle chatter, twirl or aerial, flip open on hotbar swap, 9 skins, item-chams glow. A built-in resource pack shows it in the inventory and in third person too.
+- **Self chams:** outline glow on *your own* player in F5. **Zoom** (hold **Z**, scroll to adjust), Time Changer, No Hurt Cam, Low Fire, Toggle Sprint and HODL Mode (Q twice to drop a sword).
+- **HUD:** watermark, rainbow array list, FPS / CPS / ping (+ gas meter) / coords / clock, keystrokes, armor durability, now playing, simulated crypto ticker, toggle notifications.
+- **Music player:** the six POISON FM tracks (baked from the launcher's synth) plus your own `.ogg` / `.wav` in the Music folder. **[** **]** previous / next, **\\** play / pause. The HUD glow pulses with the bass.
+
+Settings you change in the launcher (module toggles, knife skin, colours, zoom…) carry over the next time the game starts, and in-game changes are saved to `config/poison.json`.
+
 ## What's real vs. preview
 
-- **Real:** Microsoft login, version list, Java runtime + game downloads, Fabric install, and launching Minecraft, plus the whole launcher UI, music player, cosmetics shop and settings.
-- **Preview only:** the 125 POISON modules (motion blur, butterfly knife, chams, HUD, cosmetics…) run in the launcher's 3D preview. The game launches as Vanilla or Fabric; there is no POISON in-game mod yet, so those modules do not appear inside Minecraft. Launch writes `poison-config.json` into the game folder for a future in-game mod to read.
+- **Real:** Microsoft login, Java runtime + game downloads, Fabric, launching Minecraft, and the POISON in-game mod above.
+- **Launcher-preview only:** the launcher's 3D page shows the full 125-module set, including things the in-game mod doesn't have yet: sub-frame cinematic blur, bloom, cosmetics such as capes, wings, halo and laser eyes, and the crypto market pages.
 - In the browser (no desktop app), Launch only plays a demo animation.
 - The exe is **not code-signed**, so Windows SmartScreen will warn on first run (More info → Run anyway).
 

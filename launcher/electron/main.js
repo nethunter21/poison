@@ -12,6 +12,8 @@ let running = null; // { startedAt }
 
 const gameRoot = () => path.join(app.getPath('appData'), '.poison-client');
 const runtimeRoot = () => path.join(gameRoot(), 'runtime');
+// POISON mod + Fabric API shipped inside the exe (extraResources), or build/mods when run from source
+const bundledModsDir = () => (app.isPackaged ? path.join(process.resourcesPath, 'mods') : path.join(__dirname, '..', 'build', 'mods'));
 
 function createWindow() {
   win = new BrowserWindow({
@@ -51,7 +53,7 @@ ipcMain.handle('poison:launch', async (_e, config) => {
       version: config.profile.version,
       loader: config.profile.loader,
       ram: L.ram, jvm: L.jvm, width: L.width, height: L.height, fullscreen: L.fullscreen, javaPath: L.javaPath,
-      root: gameRoot(), runtimeRoot: runtimeRoot(), auth: authorization, config,
+      root: gameRoot(), runtimeRoot: runtimeRoot(), bundledModsDir: bundledModsDir(), auth: authorization, config,
     }, (ev, payload) => {
       if (ev === 'progress') send('poison:progress', payload);
       else if (ev === 'log') send('poison:log', payload);
@@ -71,11 +73,15 @@ ipcMain.handle('poison:launch', async (_e, config) => {
 
 /* ---------- misc ---------- */
 ipcMain.handle('poison:openFolder', (_e, which) => {
-  const dir = which === 'mods' ? path.join(gameRoot(), 'mods') : which === 'screenshots' ? path.join(gameRoot(), 'screenshots') : gameRoot();
+  const dir = { mods: path.join(gameRoot(), 'mods'), screenshots: path.join(gameRoot(), 'screenshots'), music: path.join(gameRoot(), 'poison', 'music') }[which] || gameRoot();
   fs.mkdirSync(dir, { recursive: true });
   return shell.openPath(dir);
 });
-ipcMain.handle('poison:info', () => ({ version: app.getVersion(), gameDir: gameRoot(), platform: process.platform }));
+ipcMain.handle('poison:info', () => {
+  let poisonFor = null;
+  try { poisonFor = JSON.parse(fs.readFileSync(path.join(bundledModsDir(), 'manifest.json'), 'utf8')).minecraft; } catch { /* not bundled */ }
+  return { version: app.getVersion(), gameDir: gameRoot(), platform: process.platform, poisonFor };
+});
 ipcMain.on('poison:window', (_e, action) => {
   if (!win) return;
   if (action === 'min') win.minimize();
