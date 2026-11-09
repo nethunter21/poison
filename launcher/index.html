@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POISON Client</title>
+<meta name="description" content="POISON — a legit PvP client launcher with 100+ modules, cinematic motion blur, butterfly knife animations, music player and on-chain drip." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@700;900&display=swap" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<!-- ============ BOOT SPLASH ============ -->
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-logo glitch" data-text="POISON">POISON</div>
+    <div class="splash-sub">LEGIT PVP CLIENT · ON-CHAIN DRIP</div>
+    <div class="splash-bar"><i id="splashBar"></i></div>
+    <div class="splash-log" id="splashLog">initializing…</div>
+    <code class="splash-hash" id="splashHash">0x</code>
+  </div>
+</div>
+
+<!-- ============ GLOBAL FX LAYERS ============ -->
+<canvas id="bgCanvas"></canvas>
+<div class="aurora"><i></i><i></i><i></i></div>
+<div class="grain-layer"></div>
+<div class="scan-layer"></div>
+<canvas id="fxCanvas"></canvas>
+<div id="cursorGlow"></div>
+<div id="toasts"></div>
+
+<div class="app">
+  <!-- ============ TITLE BAR ============ -->
+  <header class="titlebar">
+    <div class="tb-logo"><span class="skull">☠</span><b class="glitch" data-text="POISON">POISON</b><em>CLIENT</em></div>
+    <div id="ticker" class="ticker"><div id="tickerTrack" class="ticker-track"></div></div>
+    <div class="tb-wallet" title="$PSN is play-money with no real value"><i>◎</i><b data-wallet>0</b><span>$PSN</span></div>
+    <div class="tb-win">
+      <button type="button" data-win="min" aria-label="minimize">—</button>
+      <button type="button" data-win="max" aria-label="maximize">▢</button>
+      <button type="button" data-win="close" aria-label="close" class="close">✕</button>
+    </div>
+  </header>
+
+  <!-- ============ SIDEBAR ============ -->
+  <nav class="sidebar">
+    <div class="nav">
+      <button type="button" class="nav-item active" data-page="home"><i>⌂</i><span>Home</span></button>
+      <button type="button" class="nav-item" data-page="client"><i>◈</i><span>Client</span><em class="nav-badge">LIVE</em></button>
+      <button type="button" class="nav-item" data-page="mods"><i>▦</i><span>Modules</span><em class="nav-badge" id="navModCount">0</em></button>
+      <button type="button" class="nav-item" data-page="locker"><i>🦋</i><span>Locker</span></button>
+      <button type="button" class="nav-item" data-page="music"><i>♫</i><span>Music</span></button>
+      <button type="button" class="nav-item" data-page="market"><i>₿</i><span>Market</span></button>
+      <button type="button" class="nav-item" data-page="settings"><i>⚙</i><span>Settings</span></button>
+      <div class="nav-glider"></div>
+    </div>
+
+    <div class="mini-player" id="miniPlayer">
+      <div class="mini-top">
+        <div class="mini-art" id="miniArt"></div>
+        <div class="mini-meta"><b id="miniTitle">—</b><span id="miniArtist">POISON FM</span></div>
+        <canvas id="miniViz" width="120" height="28"></canvas>
+      </div>
+      <div class="mini-progress"><i id="miniFill"></i></div>
+      <div class="mini-ctrl">
+        <button type="button" data-mp="shuffle" title="shuffle">⤮</button>
+        <button type="button" data-mp="prev">⏮</button>
+        <button type="button" data-mp="toggle" class="mp-play">▶</button>
+        <button type="button" data-mp="next">⏭</button>
+        <button type="button" data-mp="repeat" title="repeat">↻</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ PAGES ============ -->
+  <main class="pages">
+
+    <!-- HOME -->
+    <section class="page active" id="page-home">
+      <div class="home-grid">
+        <div class="hero">
+          <div class="hero-kicker"><span class="pulse-dot"></span> mainnet live · build b1.4.2 · <span id="featureCount">100+</span> features</div>
+          <h1 class="hero-title"><span class="glitch big" data-text="POISON">POISON</span></h1>
+          <p class="hero-sub">The <b>legit</b> PvP client with a cinematic render pipeline, a butterfly knife that actually flips, an in-game music player and maximum on-chain drip. <em>Zero cheats. All gas.</em></p>
+
+          <div class="launch-row">
+            <div class="profile glass">
+              <div class="avatar"><i></i></div>
+              <div class="profile-fields">
+                <label>Player</label>
+                <input id="profileName" maxlength="16" spellcheck="false" />
+                <div class="prof-row">
+                  <select id="versionSelect">
+                    <option>1.8.9</option><option>1.12.2</option><option>1.16.5</option><option>1.20.4</option><option>1.21.1</option><option>1.21.4</option>
+                  </select>
+                  <select id="loaderSelect"><option>POISON (Fabric)</option><option>POISON (Forge)</option><option>Vanilla + POISON</option></select>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="launch-btn magnetic" id="launchBtn">
+              <span class="lb-ring"></span>
+              <span class="lb-inner"><b>LAUNCH</b><small id="launchSub">1.8.9 · 4 GB · 120+ fx</small></span>
+            </button>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat glass tilt"><b id="statMods">0</b><span>modules on</span></div>
+            <div class="stat glass tilt"><b data-wallet>0</b><span>$PSN (play-money)</span></div>
+            <div class="stat glass tilt"><b id="statBadges">0</b><span>badges minted</span></div>
+            <div class="stat glass tilt"><b id="statLaunches">0</b><span>launches</span></div>
+          </div>
+        </div>
+
+        <div class="home-side">
+          <div class="card glass">
+            <div class="card-h"><b>Quick Play</b><span>one-click queue</span></div>
+            <div class="quick">
+              <button type="button" class="qp" data-qp="Bedwars"><i>🛏</i>Bedwars</button>
+              <button type="button" class="qp" data-qp="Skywars"><i>☁</i>Skywars</button>
+              <button type="button" class="qp" data-qp="Duels"><i>⚔</i>Duels</button>
+              <button type="button" class="qp" data-qp="UHC"><i>❤</i>UHC</button>
+              <button type="button" class="qp" data-qp="Practice"><i>🎯</i>Practice</button>
+              <button type="button" class="qp" data-qp="Survival"><i>⛏</i>Survival</button>
+            </div>
+          </div>
+          <div class="card glass">
+            <div class="card-h"><b>Patch Notes</b><span>b1.4.2</span></div>
+            <ul class="news" id="news"></ul>
+          </div>
+          <div class="card glass">
+            <div class="card-h"><b>On-chain Badges</b><span id="badgeProgress">0/0</span></div>
+            <div class="badges" id="badges"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLIENT PREVIEW -->
+    <section class="page" id="page-client">
+      <div class="client-top">
+        <div class="presets">
+          <span class="lbl">Render preset</span>
+          <button type="button" class="chip" data-preset="cinematic">🎬 Cinematic</button>
+          <button type="button" class="chip" data-preset="neon">⚡ Neon Overdrive</button>
+          <button type="button" class="chip" data-preset="comp">🎯 Competitive</button>
+          <button type="button" class="chip" data-preset="vapor">🌴 Vapor</button>
+        </div>
+        <div class="client-actions">
+          <button type="button" class="btn ghost" id="btnFlip">🦋 Flip <kbd>F</kbd></button>
+          <button type="button" class="btn ghost" id="btnInspect">🔍 Inspect <kbd>I</kbd></button>
+          <button type="button" class="btn ghost" id="btnF5">👁 F5 <kbd>V</kbd></button>
+          <button type="button" class="btn ghost" id="btnPilot">✈ Autopilot</button>
+          <button type="button" class="btn primary" id="btnGui">⌘ Client Menu <kbd>RShift</kbd></button>
+        </div>
+      </div>
+      <div class="client-body">
+        <div class="preview" id="preview"></div>
+        <aside class="mb-panel glass">
+          <div class="card-h"><b>Motion Blur Lab</b><span>render-video look</span></div>
+          <p class="muted small">Cinematic mode renders the scene <b>N times per frame</b> across a virtual 1/30s shutter and averages them in HDR, which is how offline renderers do it. The knife flips and camera flicks smear for real.</p>
+          <div id="mbSettings"></div>
+          <div class="card-h"><b>Post FX</b><span>live</span></div>
+          <div id="fxSettings"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- MODULES -->
+    <section class="page" id="page-mods">
+      <div class="page-head">
+        <div><h2>Modules</h2><p class="muted" id="modsCount"></p></div>
+        <div class="search"><i>⌕</i><input id="modsSearch" placeholder="search 100+ modules…" spellcheck="false" /></div>
+      </div>
+      <div class="chips" id="modsCats"></div>
+      <div class="legit-banner">✔ 100% legit. Cosmetic, HUD, QoL and performance only. No reach, aim, ESP, velocity or autoclickers. Chams apply to <b>your own</b> model and items only.</div>
+      <div class="mods-grid" id="modsGrid"></div>
+    </section>
+
+    <!-- LOCKER -->
+    <section class="page" id="page-locker">
+      <div class="locker">
+        <div class="showcase glass" id="showcase">
+          <div class="sc-title"><span class="glitch" data-text="BALISONG">BALISONG</span><small>replaces every sword · visual only</small></div>
+          <div class="sc-anims">
+            <button type="button" class="chip" data-kanim="flip_open">Flip Open</button>
+            <button type="button" class="chip" data-kanim="flip_close">Close</button>
+            <button type="button" class="chip" data-kanim="inspect">Inspect</button>
+            <button type="button" class="chip" data-kanim="idle_twirl">Twirl</button>
+            <button type="button" class="chip" data-kanim="idle_aerial">Aerial</button>
+            <button type="button" class="chip" data-kanim="idle_chatter">Chatter</button>
+            <button type="button" class="chip" data-kanim="swing_slash">Slash</button>
+            <button type="button" class="chip" data-kanim="swing_spin">Spin Stab</button>
+          </div>
+          <div class="sc-hint">drag to rotate · double-click to auto-spin</div>
+        </div>
+        <div class="locker-side">
+          <div class="chips" id="lockerTabs"></div>
+          <div class="locker-desc glass" id="lockerDesc"></div>
+          <div class="locker-grid" id="lockerGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MUSIC -->
+    <section class="page" id="page-music">
+      <div class="music">
+        <div class="player glass">
+          <div class="mp-art" id="mpArt"><div class="vinyl"></div></div>
+          <div class="mp-meta"><h3 id="mpTitle">—</h3><span id="mpArtist">POISON FM</span></div>
+          <div class="mp-seek" id="mpSeek"><i id="mpFill"></i></div>
+          <div class="mp-times"><span id="mpPos">0:00</span><span id="mpDur">0:00</span></div>
+          <div class="mp-ctrl">
+            <button type="button" data-mp="shuffle">⤮</button>
+            <button type="button" data-mp="prev">⏮</button>
+            <button type="button" data-mp="toggle" class="mp-play big">▶</button>
+            <button type="button" data-mp="next">⏭</button>
+            <button type="button" data-mp="repeat">↻</button>
+          </div>
+          <div class="mp-vol"><i>🔊</i><input type="range" class="slider" id="mpVol" min="0" max="1" step="0.01" /></div>
+          <div class="eq">
+            <div class="eq-band"><input type="range" min="-12" max="12" step="0.5" orient="vertical" /><span>LOW</span></div>
+            <div class="eq-band"><input type="range" min="-12" max="12" step="0.5" orient="vertical" /><span>MID</span></div>
+            <div class="eq-band"><input type="range" min="-12" max="12" step="0.5" orient="vertical" /><span>HIGH</span></div>
+            <div class="eq-presets">
+              <button type="button" class="chip" data-eqp="flat">Flat</button>
+              <button type="button" class="chip" data-eqp="bass">Bass Boost</button>
+              <button type="button" class="chip" data-eqp="club">Club</button>
+              <button type="button" class="chip" data-eqp="vocal">Vocal</button>
+              <button type="button" class="chip" data-eqp="lofi">Lo-Fi</button>
+            </div>
+          </div>
+          <label class="file-btn">＋ Add your own music<input type="file" id="mpFiles" accept="audio/*" multiple /></label>
+        </div>
+        <div class="viz glass">
+          <div class="viz-modes">
+            <button type="button" class="chip" data-viz="bars">Bars</button>
+            <button type="button" class="chip" data-viz="wave">Wave</button>
+            <button type="button" class="chip" data-viz="circle">Orbit</button>
+            <button type="button" class="chip" data-viz="particles">Particles</button>
+          </div>
+          <canvas id="vizCanvas"></canvas>
+        </div>
+        <div class="playlist glass">
+          <div class="card-h"><b>Playlist</b><span>synthesized live · royalty-free</span></div>
+          <div id="playlist"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARKET -->
+    <section class="page" id="page-market">
+      <div class="page-head">
+        <div><h2>Market</h2><p class="muted">Simulated prices for vibes only. $PSN is play-money stored on this device. Nothing here is connected to a real wallet or exchange.</p></div>
+      </div>
+      <div class="market">
+        <div class="wallet-card glass">
+          <div class="wc-chip"></div>
+          <span class="muted">POISON WALLET</span>
+          <div class="wc-bal"><b data-wallet>0</b><em>$PSN</em></div>
+          <div class="muted small" id="walletUsd"></div>
+          <button type="button" class="btn primary" id="airdropBtn">Claim airdrop</button>
+          <div class="wallet-hist" id="walletHist"></div>
+        </div>
+        <div class="miner glass">
+          <div class="card-h"><b>Proof-of-Click Miner</b><span>blocks mined: <b id="mineCount">0</b></span></div>
+          <button type="button" class="mine-btn" id="mineBtn"><span>⛏</span><b>MINE</b></button>
+          <div class="mine-bar"><i id="mineBar"></i></div>
+          <code id="mineOut">click to hash</code>
+        </div>
+        <div class="fg glass">
+          <div class="card-h"><b>Fear &amp; Greed</b><span>driven by your K/D</span></div>
+          <div class="gauge" id="fgGauge"><div class="gauge-arc"></div><div class="gauge-needle"></div><b id="fgVal">50</b></div>
+          <div class="fg-label" id="fgLabel">Neutral</div>
+        </div>
+        <div class="coins" id="marketGrid"></div>
+        <div class="explorer-wrap glass">
+          <div class="card-h"><b>Block Explorer</b><span>every launcher action, hashed locally</span></div>
+          <div id="explorer" class="explorer"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <div class="page-head"><div><h2>Settings</h2><p class="muted">Launcher, game and config.</p></div></div>
+      <div class="settings">
+        <div class="set-card glass">
+          <div class="card-h"><b>Theme</b><span>fork the chain</span></div>
+          <div class="themes" id="themes"></div>
+          <div class="set-row inline"><label>Accent</label><input type="color" class="color" id="accent1" /></div>
+          <div class="set-row inline"><label>Accent 2</label><input type="color" class="color" id="accent2" /></div>
+          <div class="set-row"><label>Background</label><div class="seg" id="bgMode"></div></div>
+          <div class="set-row"><label>FX quality</label><div class="seg" id="qualityMode"></div></div>
+          <div id="launcherToggles"></div>
+        </div>
+        <div class="set-card glass">
+          <div class="card-h"><b>Game</b><span>java &amp; window</span></div>
+          <div class="set-row"><label>Memory <span class="set-val" id="ramVal"></span></label><input type="range" class="slider" id="ram" min="1024" max="16384" step="512" /></div>
+          <div class="set-row"><label>Java executable</label><input class="text" id="javaPath" spellcheck="false" /></div>
+          <div class="set-row"><label>JVM arguments</label><textarea class="text" id="jvmArgs" rows="3" spellcheck="false"></textarea></div>
+          <div class="set-row inline"><label>Resolution</label><div class="res"><input class="text sm" id="resW" type="number" /> × <input class="text sm" id="resH" type="number" /></div></div>
+          <div id="gameToggles"></div>
+        </div>
+        <div class="set-card glass">
+          <div class="card-h"><b>Keybinds</b><span>click to rebind</span></div>
+          <div class="set-row inline"><label>Client menu</label><button type="button" class="keybind" id="guiKey"></button></div>
+          <div class="binds">
+            <div><kbd>F</kbd> flip knife</div><div><kbd>I</kbd> inspect</div><div><kbd>C</kbd> zoom</div><div><kbd>V</kbd> perspective</div>
+            <div><kbd>B</kbd> emote wheel</div><div><kbd>1-9</kbd> hotbar (flip on swap)</div><div><kbd>Esc</kbd> close menus</div><div><kbd>↑↑↓↓←→←→BA</kbd> ???</div>
+          </div>
+          <div class="card-h"><b>Config</b><span>share your setup</span></div>
+          <div class="cfg-btns">
+            <button type="button" class="btn ghost" id="cfgExport">⇩ Export config</button>
+            <label class="btn ghost">⇧ Import config<input type="file" id="cfgImport" accept="application/json" hidden /></label>
+            <button type="button" class="btn ghost" id="cfgCopy">⧉ Copy to clipboard</button>
+            <button type="button" class="btn danger" id="cfgReset">⟲ Reset everything</button>
+          </div>
+          <p class="muted small" id="aboutLine"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- LAUNCH OVERLAY -->
+<div id="launchOverlay" class="launch-overlay">
+  <div class="lo-inner">
+    <div class="lo-ring"><i></i><i></i><i></i><b id="loPct">0%</b></div>
+    <div class="lo-step" id="loStep">initializing</div>
+    <code class="lo-hash" id="loHash"></code>
+    <div class="lo-log" id="loLog"></div>
+  </div>
+</div>
+
+<script src="js/vendor/three.min.js"></script>
+<script src="js/core.js"></script>
+<script src="js/modules.js"></script>
+<script src="js/knife.js"></script>
+<script src="js/world.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/music.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/locker.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
