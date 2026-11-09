@@ -6,9 +6,58 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "serve": "python3 -m http.server 8765"
+    "serve": "python3 -m http.server 8765",
+    "dist:win": "electron-builder --win portable nsis --x64"
   },
   "devDependencies": {
-    "electron": "^33.2.0"
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "resedit": "^2.0.3"
+  },
+  "dependencies": {
+    "minecraft-launcher-core": "^3.18.2",
+    "msmc": "^5.0.5"
+  },
+  "author": "POISON",
+  "homepage": "https://github.com/nethunter21/poison",
+  "build": {
+    "appId": "gg.poison.client",
+    "productName": "POISON Client",
+    "copyright": "POISON Client",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "index.html",
+      "css/**",
+      "js/**",
+      "electron/**",
+      "build/icon.png",
+      "package.json",
+      "!**/*.md"
+    ],
+    "asar": true,
+    "afterPack": "build/afterPack.js",
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "portable": {
+      "artifactName": "POISON-Client-${version}-portable.exe"
+    },
+    "nsis": {
+      "artifactName": "POISON-Client-${version}-setup.exe",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "shortcutName": "POISON Client"
+    }
   }
 }

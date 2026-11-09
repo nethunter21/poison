@@ -636,3 +636,25 @@ textarea.text { resize: vertical; }
 .hud-combo.idle { opacity: 0; }
 
 .wallet-card > * { position: relative; z-index: 1; }
+
+/* ---------------- accounts / real launch ---------------- */
+#skinFace { display: none; width: 48px; height: 48px; image-rendering: pixelated; border-radius: 4px; box-shadow: 0 0 0 2px rgba(0,0,0,0.35); }
+.avatar.has-skin i { display: none; }
+.avatar.has-skin #skinFace { display: block; }
+.account-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 34px; }
+.account-row[hidden], [hidden] { display: none !important; }
+#accountName { font-size: 20px; font-weight: 800; margin-right: auto; }
+.ms-btn { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px; background: #fff; color: #1b1b1b; font-weight: 700; font-size: 13px; box-shadow: 0 0 18px rgba(255,255,255,0.25); transition: transform 0.15s, box-shadow 0.2s; }
+.ms-btn:hover { transform: translateY(-1px); box-shadow: 0 0 26px rgba(255,255,255,0.45); }
+.ms-btn:disabled { opacity: 0.6; pointer-events: none; }
+.ms-logo { display: grid; grid-template-columns: 8px 8px; gap: 2px; }
+.ms-logo i { width: 8px; height: 8px; }
+.ms-logo i:nth-child(1) { background: #f25022; } .ms-logo i:nth-child(2) { background: #7fba00; }
+.ms-logo i:nth-child(3) { background: #00a4ef; } .ms-logo i:nth-child(4) { background: #ffb900; }
+.link-btn { font-size: 11px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.link-btn:hover { color: var(--accent); }
+#accountSelect { max-width: 140px; }
+.launch-btn.needs-login { filter: saturate(0.5) brightness(0.8); }
+.launch-btn.needs-login small::after { content: ' · sign in first'; }
+.lo-error { margin-top: 14px; padding: 12px 14px; border-radius: 12px; text-align: left; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; color: #ffd0d8; background: rgba(255,46,85,0.12); border: 1px solid rgba(255,46,85,0.45); max-height: 180px; overflow: auto; user-select: text; }
+.lo-close { margin-top: 14px; }

@@ -14,13 +14,24 @@ python3 -m http.server 8765
 
 Opening `index.html` straight from disk works too. Everything is plain scripts with no build step, and three.js is vendored in `js/vendor/`.
 
-**Desktop app (Electron):**
+**Windows app (.exe):** grab `POISON-Client-<version>-portable.exe` (no install, just run it), or build it yourself:
 
 ```bash
 cd launcher
 npm install
-npm start
+npm start                 # run the desktop app from source
+npm run dist:win          # -> dist/POISON-Client-1.4.2-portable.exe (+ setup.exe when built on Windows)
 ```
+
+The `Build POISON Client (Windows)` GitHub Action builds the portable exe **and** the installer on a Windows runner (Actions tab → Run workflow → download the artifact).
+
+### Desktop app: real accounts + real game
+
+1. **Sign in with Microsoft.** Microsoft's own login page opens in a popup, so POISON never sees your password. Tokens are refreshed automatically and stored **encrypted** with Windows DPAPI (`accounts.bin`). Multiple accounts are supported. You need to own Minecraft: Java Edition.
+2. **Pick a version + loader.** The version list comes live from Mojang. **Fabric** installs the latest stable loader automatically; versions Fabric doesn't support (e.g. 1.8.9) fall back to Vanilla.
+3. **Launch.** POISON downloads the official Mojang **Java runtime** for that version (no Java install needed), the client jar, libraries, natives and every asset, each SHA-1 verified, then starts the game with your RAM, JVM args and resolution settings. Live progress and errors show in the launch overlay.
+
+Game files live in `%APPDATA%\.poison-client` (separate from `.minecraft`). Put Fabric mods in its `mods` folder (Settings → Mods folder).
 
 ## Highlights
 
@@ -55,13 +66,18 @@ launcher/
   js/locker.js        cosmetics shop + 3D knife showcase
   js/fx.js            background, cursor, particles, splash, easter egg
   js/app.js           navigation, launch flow, presets, settings
-  electron/           desktop shell (frameless window + IPC)
+  electron/main.js    desktop shell: window, IPC
+  electron/auth.js    Microsoft -> Xbox -> Minecraft login (msmc), encrypted token store
+  electron/game.js    versions, Fabric, verified asset download, launch (minecraft-launcher-core)
+  electron/java.js    downloads + verifies Mojang's Java runtimes
+  build/              icon + exe resource stamping hook
 ```
 
-## What's real vs. what's a hook
+## What's real vs. preview
 
-- The whole launcher UI, the 3D preview, every effect, the music player and the cosmetics shop work as shipped.
-- **Starting the actual game is a hook.** In Electron, **Launch** writes your full config to `poison-config.json` in the app's user-data folder and calls `startGame()` in `electron/main.js`, which is a documented stub. Wiring it up needs Microsoft account auth plus a game downloader (for example `msmc` and `minecraft-launcher-core`) and the game-side mod that reads the config. In the browser, Launch runs the animated sequence in demo mode.
-- Settings persist in `localStorage`, and configs can be exported, imported or copied as JSON.
+- **Real:** Microsoft login, version list, Java runtime + game downloads, Fabric install, and launching Minecraft, plus the whole launcher UI, music player, cosmetics shop and settings.
+- **Preview only:** the 125 POISON modules (motion blur, butterfly knife, chams, HUD, cosmetics…) run in the launcher's 3D preview. The game launches as Vanilla or Fabric; there is no POISON in-game mod yet, so those modules do not appear inside Minecraft. Launch writes `poison-config.json` into the game folder for a future in-game mod to read.
+- In the browser (no desktop app), Launch only plays a demo animation.
+- The exe is **not code-signed**, so Windows SmartScreen will warn on first run (More info → Run anyway).
 
 Not affiliated with Mojang or Microsoft. Crypto elements are simulated and the $PSN currency is play-money with no value.

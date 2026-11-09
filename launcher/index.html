@@ -87,15 +87,22 @@
 
           <div class="launch-row">
             <div class="profile glass">
-              <div class="avatar"><i></i></div>
+              <div class="avatar" id="avatar"><i></i><canvas id="skinFace" width="8" height="8"></canvas></div>
               <div class="profile-fields">
-                <label>Player</label>
+                <label id="accountLabel">Player</label>
                 <input id="profileName" maxlength="16" spellcheck="false" />
+                <div class="account-row" id="accountRow" hidden>
+                  <b id="accountName">Not signed in</b>
+                  <button type="button" class="ms-btn" id="msLogin"><span class="ms-logo"><i></i><i></i><i></i><i></i></span>Sign in with Microsoft</button>
+                  <select id="accountSelect" hidden></select>
+                  <button type="button" class="link-btn" id="msAdd" hidden>+ add account</button>
+                  <button type="button" class="link-btn" id="msLogout" hidden>sign out</button>
+                </div>
                 <div class="prof-row">
                   <select id="versionSelect">
                     <option>1.8.9</option><option>1.12.2</option><option>1.16.5</option><option>1.20.4</option><option>1.21.1</option><option>1.21.4</option>
                   </select>
-                  <select id="loaderSelect"><option>POISON (Fabric)</option><option>POISON (Forge)</option><option>Vanilla + POISON</option></select>
+                  <select id="loaderSelect"><option>Fabric</option><option>Vanilla</option></select>
                 </div>
               </div>
             </div>
@@ -302,6 +309,12 @@
           <div class="set-row"><label>JVM arguments</label><textarea class="text" id="jvmArgs" rows="3" spellcheck="false"></textarea></div>
           <div class="set-row inline"><label>Resolution</label><div class="res"><input class="text sm" id="resW" type="number" /> × <input class="text sm" id="resH" type="number" /></div></div>
           <div id="gameToggles"></div>
+          <div class="cfg-btns native-only">
+            <button type="button" class="btn ghost" data-folder="game">📁 Game folder</button>
+            <button type="button" class="btn ghost" data-folder="mods">🧩 Mods folder (Fabric)</button>
+            <button type="button" class="btn ghost" data-folder="screenshots">🖼 Screenshots</button>
+          </div>
+          <p class="muted small" id="gameDirLine"></p>
         </div>
         <div class="set-card glass">
           <div class="card-h"><b>Keybinds</b><span>click to rebind</span></div>
@@ -331,6 +344,8 @@
     <div class="lo-step" id="loStep">initializing</div>
     <code class="lo-hash" id="loHash"></code>
     <div class="lo-log" id="loLog"></div>
+    <div class="lo-error" id="loError" hidden></div>
+    <button type="button" class="btn ghost lo-close" id="loClose" hidden>Close</button>
   </div>
 </div>
 

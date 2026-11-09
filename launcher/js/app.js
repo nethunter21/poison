@@ -79,6 +79,11 @@
     vs.addEventListener('change', () => { P.state.profile.version = vs.value; P.save(); updateLaunchSub(); P.emit('module', { id: 'watermark' }); });
     ls.addEventListener('change', () => { P.state.profile.loader = ls.value; P.save(); });
     U.$('#launchBtn').addEventListener('click', launch);
+    U.$('#loClose').addEventListener('click', () => U.$('#launchOverlay').classList.remove('open'));
+    if (!['Fabric', 'Vanilla'].includes(P.state.profile.loader)) { P.state.profile.loader = 'Fabric'; P.save(); }
+    ls.value = P.state.profile.loader;
+    if (native && native.accounts) setupAccounts();
+    else U.$$('.native-only').forEach((el) => (el.hidden = true));
     U.$$('.qp').forEach((b) => b.addEventListener('click', () => { P.toast(`Queued: ${b.dataset.qp}`, 'Joins on launch · play.poison.gg', 'on', '⚡'); P.chain('QUEUE ' + b.dataset.qp); }));
     renderBadges();
     P.on('achievement', renderBadges);
@@ -108,49 +113,158 @@
     updateStats();
   }
 
+  /* ---------------- accounts (desktop app) ---------------- */
+  let acct = { active: null, accounts: [] };
+  let pausedForGame = false;
+  function drawSkinFace(url) {
+    const cv = U.$('#skinFace'), g = cv.getContext('2d');
+    U.$('#avatar').classList.toggle('has-skin', !!url);
+    g.clearRect(0, 0, 8, 8);
+    if (!url) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { g.imageSmoothingEnabled = false; g.drawImage(img, 8, 8, 8, 8, 0, 0, 8, 8); g.drawImage(img, 40, 8, 8, 8, 0, 0, 8, 8); };
+    img.src = url.replace(/^http:/, 'https:');
+  }
+  function renderAccount(view) {
+    acct = view || acct;
+    const cur = acct.accounts.find((a) => a.uuid === acct.active);
+    U.$('#accountName').textContent = cur ? cur.name : 'Not signed in';
+    U.$('#accountLabel').textContent = cur ? 'Microsoft account' : 'Sign in to play';
+    U.$('#msLogin').hidden = !!cur;
+    U.$('#msAdd').hidden = !cur;
+    U.$('#msLogout').hidden = !cur;
+    const sel = U.$('#accountSelect');
+    sel.hidden = acct.accounts.length < 2;
+    sel.innerHTML = acct.accounts.map((a) => `<option value="${a.uuid}" ${a.uuid === acct.active ? 'selected' : ''}>${a.name}</option>`).join('');
+    drawSkinFace(cur && cur.skin);
+    if (cur) { P.state.profile.name = cur.name; P.save(); P.emit('module', { id: 'nametag' }); }
+    U.$('#launchBtn').classList.toggle('needs-login', !cur);
+  }
+  async function doLogin() {
+    const btns = [U.$('#msLogin'), U.$('#msAdd')];
+    btns.forEach((b) => (b.disabled = true));
+    const res = await native.login();
+    btns.forEach((b) => (b.disabled = false));
+    renderAccount(res);
+    if (res.ok) {
+      const cur = res.accounts.find((a) => a.uuid === res.active);
+      P.toast('Signed in', `Welcome, ${cur.name}`, 'on', '✔');
+      P.chain('LOGIN ' + cur.name);
+    } else if (!/closed/i.test(res.message)) P.toast('Sign-in failed', res.message, 'error', '!');
+  }
+  async function setupAccounts() {
+    U.$('#profileName').hidden = true;
+    U.$('#accountRow').hidden = false;
+    U.$('#msLogin').addEventListener('click', doLogin);
+    U.$('#msAdd').addEventListener('click', doLogin);
+    U.$('#msLogout').addEventListener('click', async () => { renderAccount(await native.logout(acct.active)); P.toast('Signed out', '', 'off', '○'); });
+    U.$('#accountSelect').addEventListener('change', async (e) => renderAccount(await native.selectAccount(e.target.value)));
+    renderAccount(await native.accounts());
+    // real version list from Mojang
+    const vr = await native.versions();
+    const vs = U.$('#versionSelect');
+    if (vr.ok) {
+      const want = P.state.profile.version;
+      vs.innerHTML = vr.versions.map((v) => `<option>${v}</option>`).join('');
+      vs.value = vr.versions.includes(want) ? want : vr.latest.release;
+      P.state.profile.version = vs.value;
+      P.save();
+      updateLaunchSub();
+    } else P.toast('Offline', 'Could not load the version list from Mojang. Check your connection.', 'error', '!');
+    const info = await native.info();
+    U.$('#gameDirLine').textContent = 'Game folder: ' + info.gameDir;
+    U.$$('[data-folder]').forEach((b) => b.addEventListener('click', () => native.openFolder(b.dataset.folder)));
+    native.onExit(({ code }) => {
+      P.toast('Minecraft closed', code ? `Exit code ${code}. Open the game folder, then logs, for details.` : 'See you next session', code ? 'error' : 'off', code ? '!' : '☠');
+      if (pausedForGame && P.music) { P.music.resume(); pausedForGame = false; }
+    });
+  }
+
   /* ---------------- launch sequence ---------------- */
-  function launch() {
-    const ov = U.$('#launchOverlay');
-    if (ov.classList.contains('open')) return;
-    ov.classList.add('open');
+  function setPct(pct) {
+    U.$('#loPct').textContent = Math.round(pct) + '%';
+    U.$('.lo-ring').style.setProperty('--p', pct);
+  }
+  function overlayReset() {
+    U.$('#loLog').innerHTML = '';
+    U.$('#loError').hidden = true;
+    U.$('#loClose').hidden = true;
+    U.$('#loStep').textContent = 'initializing';
+    setPct(0);
+  }
+  function logLine(text, mark = '✔') {
+    const log = U.$('#loLog');
+    log.insertAdjacentHTML('afterbegin', `<div><span>${mark}</span>${String(text).replace(/</g, '&lt;').slice(0, 160)}</div>`);
+    while (log.childElementCount > 40) log.removeChild(log.lastChild);
+  }
+  function launchFx() {
     P.sfx('launch');
     const r = U.$('#launchBtn').getBoundingClientRect();
     P.fx.confetti(r.left + r.width / 2, r.top + r.height / 2, 60);
-    const steps = [
-      'resolving version manifest', `downloading ${P.state.profile.version} client jar`, 'verifying asset hashes (sha1)', 'extracting natives',
-      'injecting POISON mixins', `writing config · ${P.moduleDefs.filter((m) => P.isOn(m.id)).length} modules`, 'compiling motion-blur shaders',
-      'loading butterfly knife models', 'syncing cosmetics', 'mining genesis block', 'starting JVM',
-    ];
-    const log = U.$('#loLog');
-    log.innerHTML = '';
+    P.state.stats.launches++;
+    P.save();
+    updateStats();
+    P.unlock('first_launch');
+    P.chain('LAUNCH ' + P.state.profile.version);
+  }
+  // overall progress: each stage maps into a slice of one bar
+  const STAGE_RANGE = { auth: [0, 3], meta: [3, 5], java: [5, 30], assets: [30, 70], fabric: [70, 72], 'classes-custom': [72, 76], classes: [76, 88], natives: [88, 92], 'assets-copy': [92, 96], running: [100, 100] };
+  async function launch() {
+    const ov = U.$('#launchOverlay');
+    if (ov.classList.contains('open')) return;
+    if (native && native.launch) {
+      if (!acct.active) { P.toast('Sign in first', 'Click "Sign in with Microsoft" next to the Launch button.', 'error', '!'); P.sfx('error'); return; }
+      overlayReset();
+      ov.classList.add('open');
+      launchFx();
+      let lastText = '';
+      const offProgress = native.onProgress((p) => {
+        const [a, b] = STAGE_RANGE[p.stage] || [90, 99];
+        const frac = p.total ? Math.min(1, p.done / p.total) : 0;
+        setPct(a + (b - a) * frac);
+        if (p.text !== lastText) { logLine(p.text); lastText = p.text; }
+        const label = p.total > 1 ? `${p.text} (${p.done}/${p.total})` : p.text;
+        U.$('#loStep').textContent = label;
+        U.$('#loHash').textContent = U.hash(label);
+      });
+      const offLog = native.onLog((line) => { if (/\b(error|exception)\b/i.test(line)) logLine(line, '!'); });
+      let res;
+      try { res = await native.launch(exportConfig()); } catch (e) { res = { ok: false, message: String(e && e.message || e) }; }
+      offProgress();
+      offLog();
+      if (res && res.ok) {
+        setPct(100);
+        U.$('#loStep').textContent = 'Minecraft is running. Have fun!';
+        if (P.music && P.music.playing && P.isOn('autopause')) { P.music.pause(); pausedForGame = true; }
+        setTimeout(() => ov.classList.remove('open'), 1400);
+      } else {
+        U.$('#loStep').textContent = 'Launch failed';
+        const err = U.$('#loError');
+        err.textContent = (res && res.message) || 'Unknown error';
+        err.hidden = false;
+        U.$('#loClose').hidden = false;
+        P.sfx('error');
+      }
+      return;
+    }
+    // ---- browser demo mode (no desktop app): animated sequence only ----
+    overlayReset();
+    ov.classList.add('open');
+    launchFx();
+    const steps = ['resolving version manifest', `downloading ${P.state.profile.version} client jar`, 'verifying asset hashes (sha1)', 'extracting natives', 'starting JVM'];
     let i = 0;
     const iv = setInterval(() => {
-      const pct = Math.round(((i + 1) / steps.length) * 100);
-      U.$('#loPct').textContent = pct + '%';
+      setPct(((i + 1) / steps.length) * 100);
       U.$('#loStep').textContent = steps[i];
       U.$('#loHash').textContent = U.hash(steps[i] + Date.now());
-      log.insertAdjacentHTML('afterbegin', `<div><span>✔</span>${steps[i]}</div>`);
-      U.$('.lo-ring').style.setProperty('--p', pct);
-      i++;
-      if (i >= steps.length) {
+      logLine(steps[i]);
+      if (++i >= steps.length) {
         clearInterval(iv);
-        P.state.stats.launches++;
-        P.save();
-        updateStats();
-        P.unlock('first_launch');
-        P.chain('LAUNCH ' + P.state.profile.version);
-        const config = exportConfig();
-        if (native && native.launch) {
-          native.launch(config).then((res) => P.toast(res && res.ok ? 'Game started' : 'Launch hook', (res && res.message) || '', res && res.ok ? 'on' : 'info', '🚀'));
-        } else {
-          P.toast('Launch sequence complete', 'Browser demo mode. Package with Electron and wire electron/main.js to start the real game.', 'gold', '🚀');
-        }
-        setTimeout(() => {
-          ov.classList.remove('open');
-          if (P.state.launcher.closeOnLaunch && native && native.close) native.close();
-        }, 900);
+        P.toast('Demo mode', 'Run the POISON desktop app to sign in and launch the real game.', 'gold', '🚀');
+        setTimeout(() => ov.classList.remove('open'), 900);
       }
-    }, 260);
+    }, 300);
   }
 
   /* ---------------- client page ---------------- */
