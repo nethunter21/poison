@@ -28,7 +28,34 @@ public final class Notifications {
         if (Modules.NOTIFS.on()) push(m.name, m.on() ? "enabled" : "disabled", m.on() ? 0xFF00FF9D : 0xFFA3958A);
     }
 
+    /** Mint layout: small black pills stacked above the hotbar, e.g. "Motion Blur enabled ●". */
+    private static void renderPills(DrawContext ctx) {
+        int sw = ctx.getScaledWindowWidth(), sh = ctx.getScaledWindowHeight();
+        long now = System.currentTimeMillis();
+        int y = sh - (Modules.CUSTOM_HOTBAR.on() ? 58 : 62);
+        synchronized (TOASTS) {
+            for (Iterator<Toast> it = TOASTS.iterator(); it.hasNext(); ) if (now - it.next().t > 2200) it.remove();
+            for (int i = TOASTS.size() - 1; i >= 0; i--) {
+                Toast t = TOASTS.get(i);
+                float age = (now - t.t) / 1000f;
+                float a = Math.min(1, age / 0.15f) * Math.min(1, (2.2f - age) / 0.3f);
+                String msg = t.title.equals("POISON FM") || t.title.startsWith("☠") || t.title.equals("HODL") ? t.body : t.title + " " + t.body;
+                int w = gg.poison.client.render.G2D.fw(msg, false) + 22, h = 12;
+                int x = sw / 2 - w / 2;
+                int yy = (int) (y + (1 - Math.min(1, age / 0.15f)) * 6);
+                gg.poison.client.render.G2D.pill(ctx, x, yy, x + w, yy + h, Colors.alpha(0x080808, (int) (225 * a)));
+                gg.poison.client.render.G2D.ft(ctx, msg, x + 6, yy + 2, Colors.alpha(0xFFFFFF, (int) (255 * a)), false);
+                boolean on = !t.body.equals("disabled");
+                int dot = on ? Colors.alpha(Colors.accent(), (int) (255 * a)) : Colors.alpha(0x8A8A8A, (int) (255 * a));
+                gg.poison.client.render.G2D.round(ctx, x + w - 12, yy + 3, x + w - 6, yy + 9, 3, dot);
+                if (!on) gg.poison.client.render.G2D.round(ctx, x + w - 11, yy + 4, x + w - 7, yy + 8, 2, Colors.alpha(0x080808, (int) (225 * a)));
+                y -= h + 3;
+            }
+        }
+    }
+
     public static void render(DrawContext ctx) {
+        if (Modules.HUD_LAYOUT.is("mint")) { renderPills(ctx); return; }
         MinecraftClient mc = MinecraftClient.getInstance();
         TextRenderer tr = mc.textRenderer;
         int sw = ctx.getScaledWindowWidth(), sh = ctx.getScaledWindowHeight();

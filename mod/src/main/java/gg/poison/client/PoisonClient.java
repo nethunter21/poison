@@ -35,6 +35,7 @@ public class PoisonClient implements ClientModInitializer {
     private static long lastFrame = System.nanoTime();
     private static int lastSlot = -1;
     private static float lastAutoFlip;
+    private static final java.util.Set<gg.poison.client.module.Module> KEY_DOWN = new java.util.HashSet<>();
 
     @Override
     public void onInitializeClient() {
@@ -79,6 +80,19 @@ public class PoisonClient implements ClientModInitializer {
     private static void tick(MinecraftClient mc) {
         ConfigManager.tick();
         gg.poison.client.render.WorldFx.tick(mc);
+        gg.poison.client.hud.MintHud.tickTps(mc);
+        // per-module keybinds (set with middle-click in the client menu)
+        long win = mc.getWindow().getHandle();
+        for (gg.poison.client.module.Module mod : Modules.ALL) {
+            if (mod.key < 0) continue;
+            boolean down = mc.currentScreen == null && InputUtil.isKeyPressed(win, mod.key);
+            if (down && !KEY_DOWN.contains(mod)) {
+                mod.toggle();
+                gg.poison.client.hud.Notifications.module(mod);
+                ConfigManager.markDirty();
+            }
+            if (down) KEY_DOWN.add(mod); else KEY_DOWN.remove(mod);
+        }
         while (menuKey.wasPressed()) if (mc.currentScreen == null) mc.setScreen(new ClickGuiScreen());
         while (musicNext.wasPressed()) MusicPlayer.next();
         while (musicPrev.wasPressed()) MusicPlayer.prev();

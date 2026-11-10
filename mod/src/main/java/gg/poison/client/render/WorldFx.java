@@ -38,6 +38,7 @@ public final class WorldFx {
     private record Ring(double x, double y, double z, long t) {}
     private static final class Particle {
         double x, y, z, vx, vy, vz; final int color, shape; final float size, life; final long born = System.currentTimeMillis();
+        double ocx, ocz, ang, rad;   // vortex orbit (shape 4)
         Particle(double x, double y, double z, double vx, double vy, double vz, int color, float size, float life, int shape) {
             this.x = x; this.y = y; this.z = z; this.vx = vx; this.vy = vy; this.vz = vz; this.color = color; this.size = size; this.life = life; this.shape = shape;
         }
@@ -79,6 +80,18 @@ public final class WorldFx {
         String st = Modules.HIT_STYLE.get();
         int n = (int) Modules.HIT_AMOUNT.get().doubleValue();
         double cx = target.getX(), cy = target.getY() + target.getHeight() * 0.6, cz = target.getZ();
+        if (st.equals("crystal")) {
+            for (int i = 0; i < n; i++) {
+                double sp = 0.07 + RNG.nextDouble() * 0.16, a = RNG.nextDouble() * Math.PI * 2, el = (RNG.nextDouble() - 0.3) * Math.PI;
+                int color = RNG.nextInt(4) == 0 ? 0xFFFFFFFF : (RNG.nextBoolean() ? Colors.accent() : Colors.accent2());
+                PARTICLES.add(new Particle(cx, cy, cz, Math.cos(a) * Math.cos(el) * sp, Math.sin(el) * sp + 0.06, Math.sin(a) * Math.cos(el) * sp, color, 0.03f + RNG.nextFloat() * 0.04f, 0.7f + RNG.nextFloat() * 0.6f, 2));
+            }
+            for (int i = 0; i < 5; i++) {
+                double a = RNG.nextDouble() * Math.PI * 2, el = (RNG.nextDouble() - 0.4) * 0.8, sp = 0.35 + RNG.nextDouble() * 0.3;
+                PARTICLES.add(new Particle(cx, cy, cz, Math.cos(a) * Math.cos(el) * sp, Math.sin(el) * sp, Math.sin(a) * Math.cos(el) * sp, Colors.accent(), 0.012f, 0.35f, 3));
+            }
+            return;
+        }
         for (int i = 0; i < n; i++) {
             int color = st.equals("coins") ? 0xFFFFC233 : st.equals("hearts") ? 0xFFFF2E55 : st.equals("hex") ? 0xFF00FF66 : (RNG.nextBoolean() ? Colors.accent() : Colors.accent2());
             int shape = st.equals("coins") || st.equals("hearts") ? 1 : 0;
@@ -96,6 +109,18 @@ public final class WorldFx {
             for (int i = 0; i < jag.length; i++) jag[i] = (RNG.nextDouble() - 0.5) * 0.9;
             BOLTS.add(new Bolt(x, y, z, System.currentTimeMillis(), jag));
             mc.world.playSound(mc.player, x, y, z, SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.PLAYERS, 0.5f, 1.4f);
+        } else if (fx.equals("vortex")) {
+            for (int i = 0; i < 70; i++) {
+                Particle q = new Particle(x, y + 0.1, z, 0, 0.025 + RNG.nextDouble() * 0.03, 0, i % 3 == 0 ? 0xFFD8FFF0 : Colors.accent(), 0.07f + RNG.nextFloat() * 0.08f, 1.6f + RNG.nextFloat() * 0.6f, 4);
+                q.ocx = x; q.ocz = z; q.ang = RNG.nextDouble() * Math.PI * 2; q.rad = 0.2 + RNG.nextDouble() * 0.5;
+                PARTICLES.add(q);
+            }
+            for (int i = 0; i < 40; i++) {
+                double a = RNG.nextDouble() * Math.PI * 2, sp = 0.08 + RNG.nextDouble() * 0.2;
+                PARTICLES.add(new Particle(x, y + e.getHeight() * 0.5, z, Math.cos(a) * sp, 0.12 + RNG.nextDouble() * 0.2, Math.sin(a) * sp, Colors.accent(), 0.04f, 1.1f, 2));
+            }
+            RINGS.add(new Ring(x, y + 0.05, z, System.currentTimeMillis()));
+            mc.world.playSound(mc.player, x, y, z, SoundEvents.BLOCK_AMETHYST_BLOCK_BREAK, SoundCategory.PLAYERS, 1f, 0.8f);
         } else if (fx.equals("rekt")) {
             TEXTS.add(new FloatText(x, y + e.getHeight() + 0.3, z, "REKT", Colors.accent(), System.currentTimeMillis()));
             mc.world.playSound(mc.player, x, y, z, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1f, 0.7f);
@@ -133,6 +158,7 @@ public final class WorldFx {
         float g = Colors.glow();
         MatrixStack ms = ctx.matrixStack() != null ? ctx.matrixStack() : new MatrixStack();
         VertexConsumerProvider vcp = ctx.consumers();
+        GlowConsumers.flush(); // self-chams fill queued while entities rendered
         VertexConsumer glow = vcp.getBuffer(RenderLayer.getLightning()); // additive
         Matrix4f m = ms.peek().getPositionMatrix();
 
@@ -198,13 +224,40 @@ public final class WorldFx {
             float age = (now - q.born) / 1000f;
             if (age > q.life) { it.remove(); continue; }
             float s60 = dt * 60;
-            q.x += q.vx * s60; q.y += q.vy * s60; q.z += q.vz * s60;
-            q.vy -= 0.008 * s60; q.vx *= Math.pow(0.96, s60); q.vz *= Math.pow(0.96, s60);
+            if (q.shape == 4) { // vortex: orbit + rise + widen
+                q.ang += 0.22 * s60; q.rad += 0.012 * s60; q.y += q.vy * s60;
+                q.x = q.ocx + Math.cos(q.ang) * q.rad; q.z = q.ocz + Math.sin(q.ang) * q.rad;
+            } else {
+                q.x += q.vx * s60; q.y += q.vy * s60; q.z += q.vz * s60;
+                if (q.shape != 3) q.vy -= 0.008 * s60;
+                q.vx *= Math.pow(q.shape == 3 ? 0.9 : 0.96, s60); q.vz *= Math.pow(q.shape == 3 ? 0.9 : 0.96, s60);
+            }
             float f = 1 - age / q.life;
             double x = q.x - c.x, y = q.y - c.y, z = q.z - c.z;
+            if (q.shape == 3) { // streak: thin glowing line along its motion
+                double tx = q.vx * 6, ty = q.vy * 6, tz = q.vz * 6, w = 0.018;
+                int col = Colors.alpha(q.color, (int) (220 * f));
+                quad2(glow, m, new double[] { x - right.x * w, y - right.y * w, z - right.z * w }, new double[] { x + right.x * w, y + right.y * w, z + right.z * w },
+                    new double[] { x - tx + right.x * w, y - ty + right.y * w, z - tz + right.z * w }, new double[] { x - tx - right.x * w, y - ty - right.y * w, z - tz - right.z * w },
+                    col, col, Colors.alpha(col, 0), Colors.alpha(col, 0));
+                continue;
+            }
+            if (q.shape == 2) { // crystal shard: tall thin diamond, spinning
+                double sp = (now - q.born) / 160.0 + q.size * 100;
+                double sx = Math.cos(sp), sy = Math.sin(sp);
+                double hx = (right.x * sx + up.x * sy), hy = (right.y * sx + up.y * sy), hz = (right.z * sx + up.z * sy);
+                double wx = (-right.x * sy + up.x * sx), wy = (-right.y * sy + up.y * sx), wz = (-right.z * sy + up.z * sx);
+                for (int layer = 0; layer < 2; layer++) {
+                    double L = q.size * (layer == 0 ? 6 : 3.2), W = q.size * (layer == 0 ? 2.6 : 0.9);
+                    int col = layer == 0 ? Colors.alpha(q.color, (int) (60 * f)) : Colors.alpha(Colors.lerp(q.color, 0xFFFFFFFF, 0.45f), (int) (255 * f));
+                    quad2(glow, m, new double[] { x + hx * L, y + hy * L, z + hz * L }, new double[] { x + wx * W, y + wy * W, z + wz * W },
+                        new double[] { x - hx * L, y - hy * L, z - hz * L }, new double[] { x - wx * W, y - wy * W, z - wz * W }, col, col, col, col);
+                }
+                continue;
+            }
             for (int layer = 0; layer < 2; layer++) {
                 double s = q.size * (layer == 0 ? 3.2 : 1);
-                int col = layer == 0 ? Colors.alpha(q.color, (int) (70 * f)) : Colors.alpha(Colors.lerp(q.color, 0xFFFFFFFF, 0.35f), (int) (255 * f));
+                int col = layer == 0 ? Colors.alpha(q.color, (int) ((q.shape == 4 ? 45 : 70) * f)) : Colors.alpha(Colors.lerp(q.color, 0xFFFFFFFF, 0.35f), (int) ((q.shape == 4 ? 90 : 255) * f));
                 double rx = right.x * s, ry = right.y * s, rz = right.z * s, ux = up.x * s, uy = up.y * s, uz = up.z * s;
                 if (q.shape == 1) quad2(glow, m, new double[] { x + ux, y + uy, z + uz }, new double[] { x - rx, y - ry, z - rz }, new double[] { x - ux, y - uy, z - uz }, new double[] { x + rx, y + ry, z + rz }, col, col, col, col);
                 else quad2(glow, m, new double[] { x - rx - ux, y - ry - uy, z - rz - uz }, new double[] { x - rx + ux, y - ry + uy, z - rz + uz }, new double[] { x + rx + ux, y + ry + uy, z + rz + uz }, new double[] { x + rx - ux, y + ry - uy, z + rz - uz }, col, col, col, col);
@@ -227,6 +280,9 @@ public final class WorldFx {
                 }
             }
         }
+        // giant 3D lyrics floating in the world
+        if (Modules.LYRICS.on() && Modules.LYRICS_3D.get()) lyrics3d(mc, cam, c, ms, vcp, now);
+
         // floating text
         TextRenderer tr = mc.textRenderer;
         for (Iterator<FloatText> it = TEXTS.iterator(); it.hasNext(); ) {
@@ -249,6 +305,53 @@ public final class WorldFx {
             tr.draw(Text.literal(ft.text()), -w / 2f, 0, col, false, tm, vcp, TextRenderer.TextLayerType.SEE_THROUGH, 0, 0xF000F0);
             ms.pop();
         }
+    }
+
+    // ----------------------------------------------------------------- 3D lyrics
+    private static String lyricLine;
+    private static double lyricAx, lyricAy, lyricAz;
+    private static long lyricStart;
+    private static float lyricTilt;
+
+    private static void lyrics3d(MinecraftClient mc, Camera cam, Vec3d c, MatrixStack ms, VertexConsumerProvider vcp, long now) {
+        gg.poison.client.music.MusicPlayer.Lyric cur = gg.poison.client.music.MusicPlayer.lyric();
+        if (cur == null) { lyricLine = null; return; }
+        if (!cur.text().equals(lyricLine)) {
+            // anchor each new line somewhere in front of you; it stays put in the world
+            lyricLine = cur.text();
+            lyricStart = now;
+            double yaw = Math.toRadians(cam.getYaw() + (RNG.nextDouble() - 0.5) * 50);
+            double dist = 6 + RNG.nextDouble() * 3;
+            lyricAx = c.x - Math.sin(yaw) * dist;
+            lyricAz = c.z + Math.cos(yaw) * dist;
+            lyricAy = c.y + 0.6 + (RNG.nextDouble() - 0.3) * 1.6;
+            lyricTilt = (float) ((RNG.nextDouble() - 0.5) * 14);
+        }
+        gg.poison.client.music.MusicPlayer.Lyric next = gg.poison.client.music.MusicPlayer.lyricAt(1);
+        double lineLen = next != null ? Math.max(1.2, next.time() - cur.time()) : 4;
+        double into = gg.poison.client.music.MusicPlayer.position() - cur.time();
+        String[] words = lyricLine.split(" ");
+        int shown = Math.max(1, Math.min(words.length, (int) Math.ceil(words.length * Math.min(1, into / (lineLen * 0.7)))));
+        String text = String.join(" ", java.util.Arrays.copyOf(words, shown));
+        float age = (now - lyricStart) / 1000f;
+        float a = Math.min(1, age / 0.25f) * (float) Math.max(0, Math.min(1, (lineLen - into) / 0.4));
+        if (a <= 0.01f) return;
+        TextRenderer tr = mc.textRenderer;
+        net.minecraft.text.Text t = G2D.t(text, G2D.INTER_BIG);
+        ms.push();
+        ms.translate(lyricAx - c.x, lyricAy - c.y + Math.sin(now / 900.0) * 0.08, lyricAz - c.z);
+        ms.multiply(cam.getRotation());
+        ms.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotationDegrees(lyricTilt));
+        float sc = 0.045f * Modules.LYRICS_SIZE.f() * (0.92f + 0.08f * Math.min(1, age * 3));
+        ms.scale(sc, -sc, sc);
+        int w = tr.getWidth(t);
+        Matrix4f tm = ms.peek().getPositionMatrix();
+        int glowC = Colors.alpha(Colors.accent(), (int) (60 * a));
+        for (int dx = -2; dx <= 2; dx++) for (int dy = -2; dy <= 2; dy++) if (Math.abs(dx) + Math.abs(dy) == 2) {
+            tr.draw(t, -w / 2f + dx, dy, glowC, false, new Matrix4f(tm).translate(0, 0, -0.01f), vcp, TextRenderer.TextLayerType.SEE_THROUGH, 0, 0xF000F0);
+        }
+        tr.draw(t, -w / 2f, 0, Colors.alpha(Colors.lerp(Colors.accent(), 0xFFFFFFFF, 0.15f), (int) (255 * a)), false, tm, vcp, TextRenderer.TextLayerType.SEE_THROUGH, 0, 0xF000F0);
+        ms.pop();
     }
 
     private static void ring(VertexConsumer vc, Matrix4f m, double x, double y, double z, double r0, double r1, int a) {

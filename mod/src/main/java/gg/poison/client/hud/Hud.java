@@ -36,13 +36,18 @@ public final class Hud {
         float g = Colors.glow();
 
         if (Modules.SCREEN_GLOW.on()) screenGlow(ctx, sw, sh, g);
-        int y = Modules.WATERMARK.on() ? watermark(ctx, mc, g) : 4;
-        pills(ctx, mc, y, g);
-        if (Modules.ARRAYLIST.on()) arrayList(ctx, sw, dt, g);
-        if (Modules.KEYSTROKES.on()) keystrokes(ctx, mc, 4, sh - 96, g);
-        if (Modules.ARMOR.on()) armor(ctx, mc, sw, sh);
-        if (Modules.NOW_PLAYING.on() && MusicPlayer.current() != null) nowPlaying(ctx, sw, g);
-        if (Modules.TICKER.on()) ticker(ctx, sw);
+        if (Modules.CUSTOM_HOTBAR.on()) MintHud.hotbar(ctx);
+        if (Modules.HUD_LAYOUT.is("mint")) {
+            MintHud.render(ctx);
+        } else {
+            int y = Modules.WATERMARK.on() ? watermark(ctx, mc, g) : 4;
+            pills(ctx, mc, y, g);
+            if (Modules.ARRAYLIST.on()) arrayList(ctx, sw, dt, g);
+            if (Modules.KEYSTROKES.on()) keystrokes(ctx, mc, 4, sh - 96, g);
+            if (Modules.ARMOR.on() && !Modules.CUSTOM_HOTBAR.on()) armor(ctx, mc, sw, sh);
+            if (Modules.NOW_PLAYING.on() && MusicPlayer.current() != null) nowPlaying(ctx, sw, g);
+            if (Modules.TICKER.on()) ticker(ctx, sw);
+        }
         if (Modules.CROSSHAIR.on() && mc.options.getPerspective().isFirstPerson() && mc.currentScreen == null) crosshair(ctx, sw, sh, g);
         Notifications.render(ctx);
     }
@@ -50,6 +55,10 @@ public final class Hud {
     private static void screenGlow(DrawContext ctx, int sw, int sh, float g) {
         int a = (int) (90 * Modules.SCREEN_GLOW_AMOUNT.f() * Math.min(2f, g));
         int c1 = Colors.alpha(Colors.accent(), a), c2 = Colors.alpha(Colors.accent2(), a), z1 = Colors.alpha(Colors.accent(), 0), z2 = Colors.alpha(Colors.accent2(), 0);
+        if (Modules.SCREEN_GLOW_MODE.is("full")) {
+            // whole-screen neon ambience, brighter at the edges
+            G2D.rect(ctx, 0, 0, sw, sh, Colors.alpha(Colors.accent(), (int) (a * 0.45f)));
+        }
         int d = Math.max(20, sh / 7);
         G2D.vgrad(ctx, 0, 0, sw, d, c1, z1);
         G2D.vgrad(ctx, 0, sh - d, sw, sh, z2, c2);

@@ -12,6 +12,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Motion blur is composited right after the world, before any HUD, so the HUD stays sharp. */
 @Mixin(InGameHud.class)
 public class InGameHudMixin {
+    /** Custom hotbar replaces the vanilla hotbar, hearts/hunger and (optionally) XP. */
+    @Inject(method = "renderHotbar", at = @At("HEAD"), cancellable = true)
+    private void poison$hotbar(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+        if (gg.poison.client.module.Modules.CUSTOM_HOTBAR.on()) ci.cancel();
+    }
+
+    @Inject(method = "renderStatusBars", at = @At("HEAD"), cancellable = true)
+    private void poison$statusBars(DrawContext context, CallbackInfo ci) {
+        if (gg.poison.client.module.Modules.CUSTOM_HOTBAR.on()) ci.cancel();
+    }
+
+    @Inject(method = "renderExperienceBar", at = @At("HEAD"), cancellable = true)
+    private void poison$xpBar(DrawContext context, int x, CallbackInfo ci) {
+        if (gg.poison.client.module.Modules.CUSTOM_HOTBAR.on() && gg.poison.client.module.Modules.HOTBAR_HIDE_XP.get()) ci.cancel();
+    }
+
+    @Inject(method = "renderExperienceLevel", at = @At("HEAD"), cancellable = true)
+    private void poison$xpLevel(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+        if (gg.poison.client.module.Modules.CUSTOM_HOTBAR.on() && gg.poison.client.module.Modules.HOTBAR_HIDE_XP.get()) ci.cancel();
+    }
+
     /** Hide the vanilla crosshair when the custom one is on. */
     @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
     private void poison$crosshair(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {

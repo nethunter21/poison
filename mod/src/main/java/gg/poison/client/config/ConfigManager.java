@@ -37,6 +37,11 @@ public final class ConfigManager {
                 JsonObject root = JsonParser.parseString(Files.readString(FILE, StandardCharsets.UTF_8)).getAsJsonObject();
                 if (root.has("launcherStamp")) launcherStamp = root.get("launcherStamp").getAsString();
                 applyModules(root.getAsJsonObject("modules"), "settings");
+                if (!root.has("schema") || root.get("schema").getAsInt() < 2) {
+                    // 1.5.1: the mint look is the new default — move older default-themed configs over once
+                    if (Modules.THEME_MODE.is("poison")) Modules.THEME_MODE.set("mint");
+                    Modules.HUD_LAYOUT.set("mint");
+                }
                 if (root.has("panels")) for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("panels").entrySet()) {
                     var a = e.getValue().getAsJsonArray();
                     PANELS.put(e.getKey(), new int[] { a.get(0).getAsInt(), a.get(1).getAsInt(), a.size() > 2 ? a.get(2).getAsInt() : 0 });
@@ -74,6 +79,7 @@ public final class ConfigManager {
             if (!modules.has(m.id) || !modules.get(m.id).isJsonObject()) continue;
             JsonObject o = modules.getAsJsonObject(m.id);
             if (o.has("on")) m.setEnabled(o.get("on").getAsBoolean());
+            if (o.has("key") && o.get("key").isJsonPrimitive()) m.key = o.get("key").getAsInt();
             if (o.has(settingsKey) && o.get(settingsKey).isJsonObject()) {
                 JsonObject s = o.getAsJsonObject(settingsKey);
                 for (Setting<?> set : m.settings) if (s.has(set.id)) set.fromJson(s.get(set.id));
@@ -92,11 +98,13 @@ public final class ConfigManager {
         dirty = false;
         lastSave = System.currentTimeMillis();
         JsonObject root = new JsonObject();
+        root.addProperty("schema", 2);
         root.addProperty("launcherStamp", launcherStamp);
         JsonObject mods = new JsonObject();
         for (Module m : Modules.ALL) {
             JsonObject o = new JsonObject();
             o.addProperty("on", m.on());
+            o.addProperty("key", m.key);
             JsonObject s = new JsonObject();
             for (Setting<?> set : m.settings) s.add(set.id, set.toJson());
             o.add("settings", s);

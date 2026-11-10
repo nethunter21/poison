@@ -14,6 +14,6 @@ public class MinecraftClientMixin {
     @Inject(method = "hasOutline", at = @At("HEAD"), cancellable = true)
     private void poison$selfChams(Entity entity, CallbackInfoReturnable<Boolean> cir) {
         MinecraftClient mc = (MinecraftClient) (Object) this;
-        if (Modules.SELF_CHAMS.on() && entity == mc.player && !mc.options.getPerspective().isFirstPerson()) cir.setReturnValue(true);
+        if (Modules.SELF_CHAMS.on() && !Modules.SELF_CHAMS_STYLE.is("fill") && entity == mc.player && !mc.options.getPerspective().isFirstPerson()) cir.setReturnValue(true);
     }
 }

@@ -8,13 +8,15 @@ public final class Colors {
     private static int[] pair() {
         String m = gg.poison.client.module.Modules.THEME_MODE.get();
         return switch (m) {
+            case "mint" -> new int[] { 0xFF4DFFB4, 0xFF1ED98F };
             case "toxic" -> new int[] { 0xFF7CFF00, 0xFF00FFC8 };
             case "vapor" -> new int[] { 0xFFA855F7, 0xFF16C8FF };
             case "gold" -> new int[] { 0xFFFFD23F, 0xFFFF8A00 };
             case "blood" -> new int[] { 0xFFFF1744, 0xFFFF6A3D };
             case "ice" -> new int[] { 0xFF7DD3FC, 0xFFA5B4FC };
             case "rainbow" -> new int[] { wave(0, 1f), wave(6, 1f) };
-            default -> new int[] { 0xFFFF8A00, 0xFFFF2E88 };
+            case "poison" -> new int[] { 0xFFFF8A00, 0xFFFF2E88 };
+            default -> new int[] { 0xFF4DFFB4, 0xFF1ED98F };
         };
     }
     public static int accent() { return pair()[0]; }

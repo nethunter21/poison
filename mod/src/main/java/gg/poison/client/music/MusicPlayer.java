@@ -30,7 +30,9 @@ import java.util.stream.Stream;
  * filter bank feeds the beat-reactive HUD glow.
  */
 public final class MusicPlayer {
-    private record Track(String title, String resource, Path file) {}
+    private record Track(String title, String resource, Path file, double duration, List<Lyric> lyrics) {}
+    /** One timed lyric line (seconds). */
+    public record Lyric(double time, String text) {}
 
     private static final List<Track> TRACKS = new ArrayList<>();
     private static final Random RNG = new Random();
@@ -48,16 +50,81 @@ public final class MusicPlayer {
         try (InputStream in = MusicPlayer.class.getResourceAsStream("/assets/poison/music/index.txt")) {
             if (in != null) for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
                 String[] kv = line.trim().split("=", 2);
-                if (kv.length == 2) TRACKS.add(new Track(kv[1], "/assets/poison/music/" + kv[0], null));
+                if (kv.length != 2) continue;
+                String[] td = kv[1].split("\\|", 2);
+                double dur = td.length > 1 ? parseD(td[1]) : 0;
+                String res = "/assets/poison/music/" + kv[0];
+                String lrc = res.replaceFirst("\\.[^.]+$", ".lrc");
+                TRACKS.add(new Track(td[0], res, null, dur, parseLrc(MusicPlayer.class.getResourceAsStream(lrc))));
             }
         } catch (Exception e) { PoisonClient.LOG.warn("music index", e); }
         try {
             Files.createDirectories(userDir());
             try (Stream<Path> s = Files.list(userDir())) {
                 s.filter(p -> { String n = p.getFileName().toString().toLowerCase(); return n.endsWith(".ogg") || n.endsWith(".wav"); })
-                 .sorted().forEach(p -> TRACKS.add(new Track(p.getFileName().toString().replaceFirst("\\.[^.]+$", ""), null, p)));
+                 .sorted().forEach(p -> {
+                     Path lrc = p.resolveSibling(p.getFileName().toString().replaceFirst("\\.[^.]+$", ".lrc"));
+                     List<Lyric> ly = List.of();
+                     try { if (Files.exists(lrc)) ly = parseLrc(Files.newInputStream(lrc)); } catch (Exception ignored) { }
+                     TRACKS.add(new Track(p.getFileName().toString().replaceFirst("\\.[^.]+$", ""), null, p, wavDuration(p), ly));
+                 });
             }
         } catch (Exception e) { PoisonClient.LOG.warn("music folder", e); }
+    }
+
+    private static double parseD(String s) { try { return Double.parseDouble(s.trim()); } catch (Exception e) { return 0; } }
+
+    private static double wavDuration(Path p) {
+        if (!p.toString().toLowerCase().endsWith(".wav")) return 0;
+        try (AudioInputStream a = AudioSystem.getAudioInputStream(p.toFile())) {
+            return a.getFrameLength() / (double) a.getFormat().getFrameRate();
+        } catch (Exception e) { return 0; }
+    }
+
+    /** Parse an .lrc file: lines like "[01:23.45]text" (several time tags per line allowed). */
+    static List<Lyric> parseLrc(InputStream in) {
+        List<Lyric> out = new ArrayList<>();
+        if (in == null) return out;
+        try (in) {
+            java.util.regex.Pattern tag = java.util.regex.Pattern.compile("\\[(\\d+):(\\d+(?:[.:]\\d+)?)\\]");
+            for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\\r?\\n")) {
+                java.util.regex.Matcher m = tag.matcher(line);
+                List<Double> times = new ArrayList<>();
+                int end = 0;
+                while (m.find() && m.start() == end) {
+                    times.add(Integer.parseInt(m.group(1)) * 60 + parseD(m.group(2).replace(':', '.')));
+                    end = m.end();
+                }
+                String text = line.substring(end).trim();
+                for (double t : times) if (!text.isEmpty()) out.add(new Lyric(t, text));
+            }
+        } catch (Exception ignored) { }
+        out.sort(java.util.Comparator.comparingDouble(Lyric::time));
+        return out;
+    }
+
+    private static volatile SourceDataLine liveLine;
+
+    /** Seconds played in the current track (from the audio line's own clock). */
+    public static double position() {
+        SourceDataLine l = liveLine;
+        return l != null ? l.getMicrosecondPosition() / 1e6 : 0;
+    }
+    public static double duration() { int i = index; return i >= 0 && i < TRACKS.size() ? TRACKS.get(i).duration() : 0; }
+    public static String artist() { int i = index; return i >= 0 && i < TRACKS.size() ? (TRACKS.get(i).file() == null ? "POISON FM" : "Local file") : ""; }
+
+    /** Current lyric line, or null. */
+    public static Lyric lyric() { return lyricAt(0); }
+    /** Lyric line offset from the current one (0 = current, 1 = next). */
+    public static Lyric lyricAt(int offset) {
+        int i = index;
+        if (i < 0 || i >= TRACKS.size() || paused) return null;
+        List<Lyric> ly = TRACKS.get(i).lyrics();
+        double t = position();
+        int cur = -1;
+        for (int k = 0; k < ly.size(); k++) if (ly.get(k).time() <= t) cur = k;
+        int want = cur + offset;
+        return cur >= 0 && want < ly.size() ? ly.get(want) : null;
     }
 
     public static String current() {
@@ -176,6 +243,7 @@ public final class MusicPlayer {
 
     private static void stream(AudioFormat fmt, Source src) throws Exception {
         SourceDataLine line = (SourceDataLine) AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, fmt));
+        liveLine = line;
         line.open(fmt, (int) (fmt.getSampleRate() * fmt.getFrameSize() / 5)); // ~200ms buffer
         line.start();
         boolean big = fmt.isBigEndian();
@@ -226,6 +294,7 @@ public final class MusicPlayer {
             line.stop();
             line.flush();
             line.close();
+            if (liveLine == line) liveLine = null;
         }
     }
 

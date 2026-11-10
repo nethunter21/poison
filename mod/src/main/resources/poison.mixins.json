@@ -9,6 +9,7 @@
     "ClientWorldPropertiesMixin",
     "DrawContextAccessor",
     "EntityMixin",
+    "EntityRenderDispatcherMixin",
     "GameRendererMixin",
     "HeldItemRendererMixin",
     "InGameHudMixin",

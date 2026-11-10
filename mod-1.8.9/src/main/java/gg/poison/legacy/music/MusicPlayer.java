@@ -51,7 +51,7 @@ public final class MusicPlayer {
                 byte[] all = readAll(in);
                 for (String line : new String(all, StandardCharsets.UTF_8).split("\n")) {
                     String[] kv = line.trim().split("=", 2);
-                    if (kv.length == 2) TRACKS.add(new Track(kv[1], MusicPlayer.class.getResource("/assets/poison/music/" + kv[0])));
+                    if (kv.length == 2) TRACKS.add(new Track(kv[1].split("\\|")[0], MusicPlayer.class.getResource("/assets/poison/music/" + kv[0])));
                 }
             }
         } catch (Exception e) { PoisonLegacy.LOG.warn("music index", e); }

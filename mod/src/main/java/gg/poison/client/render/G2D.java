@@ -53,5 +53,51 @@ public final class G2D {
 
     public static int width(String s) { return MinecraftClient.getInstance().textRenderer.getWidth(s); }
 
+    // ------------------------------------------------------------- mint look helpers
+    public static final net.minecraft.util.Identifier INTER = net.minecraft.util.Identifier.of("poison", "inter");
+    public static final net.minecraft.util.Identifier INTER_BOLD = net.minecraft.util.Identifier.of("poison", "inter_bold");
+    public static final net.minecraft.util.Identifier INTER_BIG = net.minecraft.util.Identifier.of("poison", "inter_big");
+
+    /** Text in the smooth Inter font. */
+    public static Text t(String s, net.minecraft.util.Identifier font) { return Text.literal(s).styled(st -> st.withFont(font)); }
+    public static int fw(String s, boolean bold) { return MinecraftClient.getInstance().textRenderer.getWidth(t(s, bold ? INTER_BOLD : INTER)); }
+    public static void ft(DrawContext ctx, String s, int x, int y, int color, boolean bold) {
+        ctx.drawText(MinecraftClient.getInstance().textRenderer, t(s, bold ? INTER_BOLD : INTER), x, y, color, false);
+    }
+
+    /** Anti-aliased-looking rounded rectangle built from thin horizontal strips. */
+    public static void round(DrawContext ctx, float x1, float y1, float x2, float y2, float r, int color) {
+        r = Math.min(r, Math.min((x2 - x1) / 2f, (y2 - y1) / 2f));
+        if (r <= 0.5f) { rect(ctx, x1, y1, x2, y2, color); return; }
+        rect(ctx, x1, y1 + r, x2, y2 - r, color);
+        int steps = Math.max(2, (int) Math.ceil(r * 2));
+        float h = r / steps;
+        for (int i = 0; i < steps; i++) {
+            float dy = r - (i + 0.5f) * h;              // distance from the corner centre line
+            float inset = r - (float) Math.sqrt(Math.max(0, r * r - dy * dy));
+            float yt = y1 + i * h, yb = y2 - (i + 1) * h;
+            rect(ctx, x1 + inset, yt, x2 - inset, yt + h, color);
+            rect(ctx, x1 + inset, yb, x2 - inset, yb + h, color);
+        }
+    }
+
+    /** Pill = fully rounded rectangle. */
+    public static void pill(DrawContext ctx, float x1, float y1, float x2, float y2, int color) { round(ctx, x1, y1, x2, y2, (y2 - y1) / 2f, color); }
+
+    /** Soft glow behind a rounded shape: concentric fading rounded rects. */
+    public static void roundGlow(DrawContext ctx, float x1, float y1, float x2, float y2, float r, int color, float strength) {
+        if (strength <= 0) return;
+        for (int i = 6; i >= 1; i--) {
+            float o = i * 1.4f;
+            round(ctx, x1 - o, y1 - o, x2 + o, y2 + o, r + o, Colors.alpha(color, (int) (14 * strength)));
+        }
+    }
+
+    /** Tinted icon from assets/poison/textures/gui/icons/&lt;name&gt;.png. */
+    public static void icon(DrawContext ctx, String name, int x, int y, int size, int color) {
+        ctx.drawTexture(RenderLayer::getGuiTextured, net.minecraft.util.Identifier.of("poison", "textures/gui/icons/" + name + ".png"),
+            x, y, 0f, 0f, size, size, size, size, size, size, color);
+    }
+
     private G2D() {}
 }

@@ -121,7 +121,7 @@ public class ClickGuiScreen extends Screen {
         for (Panel p : panels) drawPanel(ctx, tr, p, mouseX, mouseY, ease);
         ctx.getMatrices().pop();
 
-        String hint = "Left-click toggle · Right-click settings · Drag headers · Right-click header collapse · Esc / RShift close";
+        String hint = "Left-click toggle · Right-click settings · Middle-click bind key · Drag headers · Right-click header collapse · Esc / RShift close";
         ctx.drawCenteredTextWithShadow(tr, Text.literal(hint), width / 2, height - 12, Colors.MUTED);
         if (MusicPlayer.current() != null)
             ctx.drawTextWithShadow(tr, Text.literal("♫ " + MusicPlayer.current() + (MusicPlayer.isPaused() ? "  (paused)" : "")), 10, height - 24, Colors.accent());
@@ -150,6 +150,8 @@ public class ClickGuiScreen extends Screen {
             } else if (hover) ctx.fill(p.x, y, p.x + W, y + ROW, 0x18FFFFFF);
             ctx.drawText(tr, Text.literal(m.name), p.x + (hover ? 8 : 6), y + 3, m.on() ? Colors.TEXT : Colors.MUTED, m.on());
             if (!m.settings.isEmpty()) ctx.drawText(tr, Text.literal(EXPANDED.contains(m.id) ? "−" : "⋯"), p.x + W - 9, y + 3, Colors.MUTED, false);
+            String keyLabel = binding == m ? "press key" : m.key >= 0 ? "[" + gg.poison.client.hud.MintHud.keyName(m.key) + "]" : null;
+            if (keyLabel != null) ctx.drawText(tr, Text.literal(keyLabel), p.x + W - 12 - tr.getWidth(keyLabel), y + 3, binding == m ? Colors.accent() : Colors.MUTED, false);
             if (hover && !m.description.isEmpty()) tooltip = m.description;
             y += ROW;
             if (!EXPANDED.contains(m.id)) continue;
@@ -186,6 +188,8 @@ public class ClickGuiScreen extends Screen {
     }
 
     private String tooltip;
+    private Module binding;
+    private boolean swallowChar;
 
     private static String pretty(String v) { return v.startsWith("knife_") ? v.substring(6) : v; }
 
@@ -220,6 +224,9 @@ public class ClickGuiScreen extends Screen {
                         click();
                     } else if (button == 1 && !m.settings.isEmpty()) {
                         if (!EXPANDED.remove(m.id)) EXPANDED.add(m.id);
+                        click();
+                    } else if (button == 2) {
+                        binding = binding == m ? null : m;   // middle-click: bind a key
                         click();
                     }
                     return true;
@@ -279,6 +286,15 @@ public class ClickGuiScreen extends Screen {
 
     @Override
     public boolean keyPressed(int key, int scan, int mods) {
+        if (binding != null) {
+            // Esc / Backspace / Delete clear the bind; anything else becomes the toggle key
+            binding.key = (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE) ? -1 : key;
+            Notifications.push(binding.name, binding.key >= 0 ? "bound to " + gg.poison.client.hud.MintHud.keyName(binding.key) : "unbound", Colors.accent());
+            binding = null;
+            swallowChar = true;
+            ConfigManager.markDirty();
+            return true;
+        }
         if (key == GLFW.GLFW_KEY_RIGHT_SHIFT || key == GLFW.GLFW_KEY_ESCAPE) { close(); return true; }
         if (key == GLFW.GLFW_KEY_BACKSPACE && !search.isEmpty()) { search = search.substring(0, search.length() - 1); return true; }
         return super.keyPressed(key, scan, mods);
@@ -286,6 +302,7 @@ public class ClickGuiScreen extends Screen {
 
     @Override
     public boolean charTyped(char chr, int mods) {
+        if (swallowChar) { swallowChar = false; return true; }
         if (Character.isLetterOrDigit(chr) || chr == ' ') { if (search.length() < 24) search += chr; return true; }
         return super.charTyped(chr, mods);
     }

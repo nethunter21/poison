@@ -1,6 +1,6 @@
-01.ogg=Satoshi's Dream
-02.ogg=Diamond Hands
-03.ogg=Gas Fees (Night Drive)
-04.ogg=To The Moon
-05.ogg=Rug Pull Requiem
-06.ogg=Cold Wallet
+01.ogg=Satoshi's Dream|79.8
+02.ogg=Diamond Hands|64.9
+03.ogg=Gas Fees (Night Drive)|86.5
+04.ogg=To The Moon|57.9
+05.ogg=Rug Pull Requiem|104.1
+06.ogg=Cold Wallet|94.4

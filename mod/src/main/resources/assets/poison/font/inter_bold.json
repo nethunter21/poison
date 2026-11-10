@@ -1,0 +1,1 @@
+{ "providers": [ { "type": "ttf", "file": "poison:inter-bold.ttf", "size": 8.0, "oversample": 6.0, "shift": [0, 0.6] } ] }
