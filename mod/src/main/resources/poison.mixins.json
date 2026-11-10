@@ -5,7 +5,9 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "ClientPlayerEntityMixin",
+    "ClientPlayerInteractionManagerMixin",
     "ClientWorldPropertiesMixin",
+    "DrawContextAccessor",
     "EntityMixin",
     "GameRendererMixin",
     "HeldItemRendererMixin",
@@ -14,5 +16,7 @@
     "MinecraftClientMixin",
     "MouseMixin"
   ],
-  "injectors": { "defaultRequire": 1 }
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

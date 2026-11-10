@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.ResourcePackActivationType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -49,6 +50,13 @@ public class PoisonClient implements ClientModInitializer {
         musicPause = reg("key.poison.music_pause", GLFW.GLFW_KEY_BACKSLASH);
 
         HudRenderCallback.EVENT.register((ctx, tick) -> Hud.render(ctx));
+        WorldRenderEvents.AFTER_ENTITIES.register(gg.poison.client.render.WorldFx::render);
+        WorldRenderEvents.BLOCK_OUTLINE.register((wctx, bctx) -> {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.world == null) return true;
+            return gg.poison.client.render.WorldFx.blockOutline(wctx, bctx.blockPos(),
+                bctx.blockState().getOutlineShape(mc.world, bctx.blockPos(), net.minecraft.block.ShapeContext.of(bctx.entity())));
+        });
         ClientTickEvents.END_CLIENT_TICK.register(PoisonClient::tick);
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             Notifications.push("☠ POISON", "client loaded · Right Shift = menu", 0xFFFF8A00);
@@ -70,6 +78,7 @@ public class PoisonClient implements ClientModInitializer {
 
     private static void tick(MinecraftClient mc) {
         ConfigManager.tick();
+        gg.poison.client.render.WorldFx.tick(mc);
         while (menuKey.wasPressed()) if (mc.currentScreen == null) mc.setScreen(new ClickGuiScreen());
         while (musicNext.wasPressed()) MusicPlayer.next();
         while (musicPrev.wasPressed()) MusicPlayer.prev();

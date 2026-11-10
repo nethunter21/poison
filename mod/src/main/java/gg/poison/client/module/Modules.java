@@ -19,6 +19,29 @@ public final class Modules {
     }
 
     // ---------------- RENDER ----------------
+    public static final Module THEME = m("theme", "Theme", RENDER, true, "Client colour scheme for every glow, HUD and menu.");
+    public static final Setting.Mode THEME_MODE = THEME.add(new Setting.Mode("mode", "Scheme", "poison", "poison", "toxic", "vapor", "gold", "blood", "ice", "rainbow"));
+    public static final Setting.Num GLOW = THEME.add(new Setting.Num("glow", "Glow intensity", 1, 0, 2, 0.05));
+    public static final Module SCREEN_GLOW = m("screenglow", "Screen Glow", RENDER, true, "Neon vignette around the screen edges, pulses with the music.");
+    public static final Setting.Num SCREEN_GLOW_AMOUNT = SCREEN_GLOW.add(new Setting.Num("amount", "Intensity", 0.3, 0.05, 1, 0.05));
+    public static final Module BLOCK_OUTLINE = m("outline", "Block Outline", RENDER, true, "Glowing outline + fill on the block you look at.");
+    public static final Setting.Bool OUTLINE_FILL = BLOCK_OUTLINE.add(new Setting.Bool("fill", "Fill", true));
+
+    // ---------------- EFFECTS (self-only / feedback on your own hits) ----------------
+    public static final Module JUMP_CIRCLES = m("jumpcircles", "Jump Circles", FX, true, "Glowing rings expand on the ground where you jump.");
+    public static final Setting.Num JUMP_SIZE = JUMP_CIRCLES.add(new Setting.Num("size", "Size", 1.4, 0.5, 3, 0.1));
+    public static final Module CHINA_HAT = m("chinahat", "China Hat", FX, true, "Gradient glow cone above your head (F5).");
+    public static final Setting.Num HAT_SIZE = CHINA_HAT.add(new Setting.Num("size", "Size", 0.6, 0.3, 1.2, 0.05));
+    public static final Module TRAILS = m("trail", "Trails", FX, true, "Glowing ribbon trail behind you.");
+    public static final Setting.Num TRAIL_LENGTH = TRAILS.add(new Setting.Num("length", "Length", 40, 10, 120, 5));
+    public static final Module AURA = m("aura", "Aura Ring", FX, false, "Rotating neon ring around your feet.");
+    public static final Setting.Num AURA_RADIUS = AURA.add(new Setting.Num("radius", "Radius", 0.8, 0.4, 1.6, 0.05));
+    public static final Module HIT_FX = m("hitfx", "Hit Effects", FX, true, "Glowing particle burst on things you hit (visual only).");
+    public static final Setting.Mode HIT_STYLE = HIT_FX.add(new Setting.Mode("style", "Style", "sparks", "sparks", "coins", "hearts", "hex"));
+    public static final Setting.Num HIT_AMOUNT = HIT_FX.add(new Setting.Num("amount", "Particles", 18, 4, 60, 1));
+    public static final Module KILL_FX = m("killfx", "Kill Effects", FX, true, "Effect when something you hit dies (visual only).");
+    public static final Setting.Mode KILL_STYLE = KILL_FX.add(new Setting.Mode("fx", "Effect", "liquidation", "liquidation", "lightning", "confetti", "rekt"));
+
     public static final Module MOTION_BLUR = m("motionblur", "Motion Blur", RENDER, true, "Frame-accumulation motion blur. Smooth, cinematic, render-video look.");
     public static final Setting.Num MB_STRENGTH = MOTION_BLUR.add(new Setting.Num("trail", "Strength", 0.55, 0.05, 0.92, 0.01));
     public static final Setting.Bool MB_FPS_SCALE = MOTION_BLUR.add(new Setting.Bool("fpsscale", "FPS independent", true));
@@ -59,9 +82,13 @@ public final class Modules {
 
     // ---------------- HUD ----------------
     public static final Module WATERMARK = m("watermark", "Watermark", HUD, true, "Glowing POISON watermark.");
+    public static final Setting.Mode WATERMARK_STYLE = WATERMARK.add(new Setting.Mode("style", "Style", "glow", "glow", "box", "minimal"));
+    public static final Module CROSSHAIR = m("crosshair", "Custom Crosshair", HUD, true, "Glowing custom crosshair.");
+    public static final Setting.Mode CROSSHAIR_STYLE = CROSSHAIR.add(new Setting.Mode("style", "Style", "cross-dot", "cross", "cross-dot", "circle", "diamond"));
     public static final Module ARRAYLIST = m("arraylist", "Array List", HUD, true, "Rainbow list of enabled modules.");
     public static final Setting.Mode ARRAY_COLOR = ARRAYLIST.add(new Setting.Mode("color", "Color", "wave", "wave", "accent", "rainbow"));
     public static final Setting.Bool ARRAY_BG = ARRAYLIST.add(new Setting.Bool("bg", "Background", true));
+    public static final Setting.Bool ARRAY_GLOW = ARRAYLIST.add(new Setting.Bool("glow", "Glow", true));
     public static final Module FPS = m("fps", "FPS", HUD, true, "Frames per second.");
     public static final Module CPS = m("cps", "CPS", HUD, true, "Clicks per second (display only).");
     public static final Module PING = m("ping", "Ping", HUD, true, "Server latency.");

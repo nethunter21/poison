@@ -1,7 +1,7 @@
 package gg.poison.client.module;
 
 public enum Category {
-    RENDER("Render", "◈"), ANIM("Animations", "✦"), CAMERA("Camera", "◉"), HUD("HUD", "▦"),
+    RENDER("Render", "◈"), FX("Effects", "✺"), ANIM("Animations", "✦"), CAMERA("Camera", "◉"), HUD("HUD", "▦"),
     MUSIC("Music", "♫"), CRYPTO("Crypto", "₿"), UTIL("Utility", "⚙");
 
     public final String title, icon;

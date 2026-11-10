@@ -73,11 +73,25 @@ launcher/
   build/              icon + exe resource stamping hook
 ```
 
-## POISON in-game (Minecraft 1.21.4 + Fabric)
+## POISON in-game: 1.8.9 and 1.21.4
 
-The exe ships the **POISON Fabric mod** ([`../mod`](../mod)) plus Fabric API. Choose **1.21.4 + Fabric** (the home screen badge turns green; one click switches) and the launcher installs them into the game's `mods` folder automatically. For other versions it removes its own files so they can't break anything; your own mods are never touched.
+The exe ships two in-game clients and installs the right one automatically. The home-screen badge turns green, and one click switches version.
 
-In game you get 26 legit modules, all real and all toggleable from the **Right Shift** client menu (draggable panels, sliders, modes, colors, search):
+| Version | Loader | Mod |
+|---|---|---|
+| **1.8.9** | Legacy Fabric (installed automatically) | [`../mod-1.8.9`](../mod-1.8.9): 34 modules incl. 1.7 animations / block-hit styles |
+| **1.21.4** | Fabric + Fabric API | [`../mod`](../mod): 36 modules |
+
+Each version + loader gets its **own instance folder** (`instances/1.8.9-fabric`, `instances/1.21.4-fabric`, …) for mods, config, options and saves. A mod for one version can never crash another, and downloads (libraries, assets, Java) are shared. Your settings from older launcher versions are copied over on first launch.
+
+**Glow effects (both versions):** 7 colour themes (incl. rainbow) that drive every glow, a beat-reactive screen-edge glow, a watermark in three styles, and an animated glowing array list. Also included:
+- **Ground and body effects:** jump circles, a China hat, trails, an aura ring, and self chams (glow, rainbow or pulse).
+- **Hit and kill effects:** glowing hit sparks (sparks, coins, hearts or hex), and kill effects (coin "liquidation" with floating text, lightning, confetti, "REKT").
+- **Crosshair and outline:** a neon block outline with fill, and a glowing custom crosshair.
+
+All of it is self-only or feedback on your own hits: no ESP, no through-wall rendering, no combat changes.
+
+All modules are toggleable from the **Right Shift** client menu (draggable panels, sliders, modes, colors, search):
 
 - **Motion blur:** accumulation blur composited before the HUD, so the HUD stays sharp, with strength and FPS-independent options.
 - **Butterfly knife:** every sword becomes an animated balisong in first person: flip (**R**), inspect (**I**), idle chatter, twirl or aerial, flip open on hotbar swap, 9 skins, item-chams glow. A built-in resource pack shows it in the inventory and in third person too.
@@ -89,7 +103,7 @@ Settings you change in the launcher (module toggles, knife skin, colours, zoom�
 
 ## What's real vs. preview
 
-- **Real:** Microsoft login, Java runtime + game downloads, Fabric, launching Minecraft, and the POISON in-game mod above.
+- **Real:** Microsoft login, Java runtime + game downloads, Fabric / Legacy Fabric, launching Minecraft, and both POISON in-game clients above.
 - **Launcher-preview only:** the launcher's 3D page shows the full 125-module set, including things the in-game mod doesn't have yet: sub-frame cinematic blur, bloom, cosmetics such as capes, wings, halo and laser eyes, and the crypto market pages.
 - In the browser (no desktop app), Launch only plays a demo animation.
 - The exe is **not code-signed**, so Windows SmartScreen will warn on first run (More info → Run anyway).

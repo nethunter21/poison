@@ -1,0 +1,9 @@
+pluginManagement {
+    repositories {
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        maven { name = 'Legacy Fabric'; url = 'https://maven.legacyfabric.net/' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'poison-mod-1.8.9'

@@ -14,7 +14,7 @@ contextBridge.exposeInMainWorld('poisonNative', {
   selectAccount: (uuid) => ipcRenderer.invoke('poison:select', uuid),
   versions: () => ipcRenderer.invoke('poison:versions'),
   launch: (config) => ipcRenderer.invoke('poison:launch', config),
-  openFolder: (which) => ipcRenderer.invoke('poison:openFolder', which),
+  openFolder: (which, version, loader) => ipcRenderer.invoke('poison:openFolder', which, version, loader),
   info: () => ipcRenderer.invoke('poison:info'),
   onProgress: sub('poison:progress'),
   onLog: sub('poison:log'),

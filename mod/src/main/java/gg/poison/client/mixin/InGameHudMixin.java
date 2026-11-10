@@ -12,6 +12,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Motion blur is composited right after the world, before any HUD, so the HUD stays sharp. */
 @Mixin(InGameHud.class)
 public class InGameHudMixin {
+    /** Hide the vanilla crosshair when the custom one is on. */
+    @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
+    private void poison$crosshair(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+        if (gg.poison.client.module.Modules.CROSSHAIR.on()) ci.cancel();
+    }
+
     @Inject(method = "render", at = @At("HEAD"))
     private void poison$motionBlur(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         MotionBlur.apply(context);

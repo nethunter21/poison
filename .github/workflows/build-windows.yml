@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['launcher/**', 'mod/**', '.github/workflows/build-windows.yml']
+    paths: ['launcher/**', 'mod/**', 'mod-1.8.9/**', '.github/workflows/build-windows.yml']
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
           cache: npm
           cache-dependency-path: launcher/package-lock.json
       - run: npm ci
-      - run: node scripts/prepare-mods.js   # builds ../mod and fetches Fabric API into build/mods
+      - run: node scripts/prepare-mods.js   # builds ../mod + ../mod-1.8.9 and fetches Fabric API into build/mods
       - run: npx electron-builder --win portable nsis --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:

@@ -1,6 +1,6 @@
 {
   "name": "poison-client",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "POISON — legit PvP client launcher: cinematic motion blur, butterfly knife, music player, 100+ modules.",
   "main": "electron/main.js",
   "private": true,

@@ -72,16 +72,16 @@ ipcMain.handle('poison:launch', async (_e, config) => {
 });
 
 /* ---------- misc ---------- */
-ipcMain.handle('poison:openFolder', (_e, which) => {
-  const dir = { mods: path.join(gameRoot(), 'mods'), screenshots: path.join(gameRoot(), 'screenshots'), music: path.join(gameRoot(), 'poison', 'music') }[which] || gameRoot();
+ipcMain.handle('poison:openFolder', (_e, which, version, loader) => {
+  const inst = version ? game.instanceDir(gameRoot(), version, loader) : gameRoot();
+  const dir = { mods: path.join(inst, 'mods'), screenshots: path.join(inst, 'screenshots'), music: path.join(inst, 'poison', 'music') }[which] || inst;
   fs.mkdirSync(dir, { recursive: true });
   return shell.openPath(dir);
 });
-ipcMain.handle('poison:info', () => {
-  let poisonFor = null;
-  try { poisonFor = JSON.parse(fs.readFileSync(path.join(bundledModsDir(), 'manifest.json'), 'utf8')).minecraft; } catch { /* not bundled */ }
-  return { version: app.getVersion(), gameDir: gameRoot(), platform: process.platform, poisonFor };
-});
+ipcMain.handle('poison:info', () => ({
+  version: app.getVersion(), gameDir: gameRoot(), platform: process.platform,
+  poisonFor: Object.keys(game.readModManifest(bundledModsDir())), // game versions with the in-game client
+}));
 ipcMain.on('poison:window', (_e, action) => {
   if (!win) return;
   if (action === 'min') win.minimize();

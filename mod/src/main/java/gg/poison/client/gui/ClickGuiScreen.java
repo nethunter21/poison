@@ -113,7 +113,7 @@ public class ClickGuiScreen extends Screen {
         String sb = search.isEmpty() ? "type to search…" : search + (System.currentTimeMillis() / 400 % 2 == 0 ? "_" : "");
         int sx = width - 170;
         ctx.fill(sx, 4, sx + 160, 18, 0xA0000000);
-        ctx.drawBorder(sx, 4, 160, 14, search.isEmpty() ? 0x40FFFFFF : Colors.ACCENT);
+        ctx.drawBorder(sx, 4, 160, 14, search.isEmpty() ? 0x40FFFFFF : Colors.accent());
         ctx.drawTextWithShadow(tr, Text.literal("⌕ " + sb), sx + 5, 7, search.isEmpty() ? Colors.MUTED : Colors.TEXT);
 
         ctx.getMatrices().push();
@@ -124,7 +124,7 @@ public class ClickGuiScreen extends Screen {
         String hint = "Left-click toggle · Right-click settings · Drag headers · Right-click header collapse · Esc / RShift close";
         ctx.drawCenteredTextWithShadow(tr, Text.literal(hint), width / 2, height - 12, Colors.MUTED);
         if (MusicPlayer.current() != null)
-            ctx.drawTextWithShadow(tr, Text.literal("♫ " + MusicPlayer.current() + (MusicPlayer.isPaused() ? "  (paused)" : "")), 10, height - 24, Colors.ACCENT);
+            ctx.drawTextWithShadow(tr, Text.literal("♫ " + MusicPlayer.current() + (MusicPlayer.isPaused() ? "  (paused)" : "")), 10, height - 24, Colors.accent());
         ctx.getMatrices().pop();
         if (tooltip != null && dragging == null && slider == null) ctx.drawTooltip(tr, Text.literal(tooltip), rawX, rawY);
     }
@@ -133,9 +133,9 @@ public class ClickGuiScreen extends Screen {
         int h = panelHeight(p);
         int a = (int) (alpha * 255);
         // glow + body
-        ctx.fill(p.x - 2, p.y - 2, p.x + W + 2, p.y + h + 2, Colors.alpha(Colors.ACCENT, (int) (40 * alpha)));
+        ctx.fill(p.x - 2, p.y - 2, p.x + W + 2, p.y + h + 2, Colors.alpha(Colors.accent(), (int) (40 * alpha)));
         ctx.fill(p.x, p.y, p.x + W, p.y + h, Colors.alpha(0x0E0914, (int) (225 * alpha)));
-        ctx.fillGradient(p.x, p.y, p.x + W, p.y + HEADER, Colors.alpha(Colors.ACCENT, a), Colors.alpha(Colors.ACCENT2, a));
+        ctx.fillGradient(p.x, p.y, p.x + W, p.y + HEADER, Colors.alpha(Colors.accent(), a), Colors.alpha(Colors.accent2(), a));
         ctx.drawText(tr, Text.literal(p.cat.icon + " " + p.cat.title.toUpperCase()), p.x + 5, p.y + 4, 0xFF140600, false);
         String count = String.valueOf(visible(p.cat).size());
         ctx.drawText(tr, Text.literal(count), p.x + W - 5 - tr.getWidth(count), p.y + 4, 0xFF140600, false);
@@ -145,8 +145,8 @@ public class ClickGuiScreen extends Screen {
         for (Module m : visible(p.cat)) {
             boolean hover = mx >= p.x && mx < p.x + W && my >= y && my < y + ROW;
             if (m.on()) {
-                ctx.fillGradient(p.x, y, p.x + W, y + ROW, Colors.alpha(Colors.ACCENT, 90), Colors.alpha(Colors.ACCENT, 10));
-                ctx.fill(p.x, y, p.x + 2, y + ROW, Colors.ACCENT);
+                ctx.fillGradient(p.x, y, p.x + W, y + ROW, Colors.alpha(Colors.accent(), 90), Colors.alpha(Colors.accent(), 10));
+                ctx.fill(p.x, y, p.x + 2, y + ROW, Colors.accent());
             } else if (hover) ctx.fill(p.x, y, p.x + W, y + ROW, 0x18FFFFFF);
             ctx.drawText(tr, Text.literal(m.name), p.x + (hover ? 8 : 6), y + 3, m.on() ? Colors.TEXT : Colors.MUTED, m.on());
             if (!m.settings.isEmpty()) ctx.drawText(tr, Text.literal(EXPANDED.contains(m.id) ? "−" : "⋯"), p.x + W - 9, y + 3, Colors.MUTED, false);
@@ -160,22 +160,22 @@ public class ClickGuiScreen extends Screen {
                 if (s instanceof Setting.Bool b) {
                     ctx.drawText(tr, Text.literal(s.label), tx, y + 2, 0xFFD9CBBD, false);
                     int swx = p.x + W - 20;
-                    ctx.fill(swx, y + 2, swx + 14, y + 9, b.get() ? Colors.ACCENT : 0x50FFFFFF);
+                    ctx.fill(swx, y + 2, swx + 14, y + 9, b.get() ? Colors.accent() : 0x50FFFFFF);
                     ctx.fill(b.get() ? swx + 8 : swx + 1, y + 3, b.get() ? swx + 13 : swx + 6, y + 8, 0xFFFFFFFF);
                 } else if (s instanceof Setting.Num n) {
                     ctx.drawText(tr, Text.literal(s.label), tx, y + 2, 0xFFD9CBBD, false);
                     String v = n.display();
-                    ctx.drawText(tr, Text.literal(v), p.x + W - 6 - tr.getWidth(v), y + 2, Colors.ACCENT, false);
+                    ctx.drawText(tr, Text.literal(v), p.x + W - 6 - tr.getWidth(v), y + 2, Colors.accent(), false);
                     int bx = tx, bw = W - 16, by = y + 13;
                     float frac = (float) ((n.get() - n.min) / (n.max - n.min));
                     ctx.fill(bx, by, bx + bw, by + 2, 0x40FFFFFF);
-                    ctx.fillGradient(bx, by, bx + (int) (bw * frac), by + 2, Colors.ACCENT, Colors.ACCENT2);
+                    ctx.fillGradient(bx, by, bx + (int) (bw * frac), by + 2, Colors.accent(), Colors.accent2());
                     int kx = bx + (int) (bw * frac);
                     ctx.fill(kx - 2, by - 2, kx + 2, by + 4, 0xFFFFFFFF);
                 } else if (s instanceof Setting.Mode md) {
                     ctx.drawText(tr, Text.literal(s.label), tx, y + 2, 0xFFD9CBBD, false);
                     String v = "‹ " + pretty(md.get()) + " ›";
-                    ctx.drawText(tr, Text.literal(v), p.x + W - 6 - tr.getWidth(v), y + 2, Colors.ACCENT, false);
+                    ctx.drawText(tr, Text.literal(v), p.x + W - 6 - tr.getWidth(v), y + 2, Colors.accent(), false);
                 } else if (s instanceof Setting.Color c) {
                     ctx.drawText(tr, Text.literal(s.label), tx, y + 2, 0xFFD9CBBD, false);
                     ctx.fill(p.x + W - 20, y + 2, p.x + W - 6, y + 9, c.get());

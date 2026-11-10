@@ -8,9 +8,11 @@ public class Module {
     public final Category category;
     public final List<Setting<?>> settings = new ArrayList<>();
     private boolean enabled;
+    /** 0..1 slide-in animation for the array list. */
+    public float anim;
 
     public Module(String id, String name, Category category, boolean on, String description) {
-        this.id = id; this.name = name; this.category = category; this.enabled = on; this.description = description;
+        this.id = id; this.name = name; this.category = category; this.enabled = on; this.description = description; this.anim = on ? 1 : 0;
     }
 
     public <S extends Setting<?>> S add(S s) { settings.add(s); return s; }

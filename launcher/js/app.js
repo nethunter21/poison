@@ -61,7 +61,9 @@
 
   /* ---------------- home ---------------- */
   const NEWS = [
-    ['NEW', 'POISON in-game client for 1.21.4 + Fabric: menu, HUD, motion blur, knife, chams, music'],
+    ['NEW', 'POISON in-game client for 1.8.9 (Legacy Fabric) and 1.21.4 (Fabric)'],
+    ['FX', 'Glow themes, jump circles, china hat, trails, aura, hit sparks, kill effects, neon block outline'],
+    ['NEW', '1.8.9: 1.7 animations with 6 block-hit styles, custom crosshair, screen glow'],
     ['NEW', 'Sign in with Microsoft; Java + game files download automatically'],
     ['NEW', 'Butterfly knife replaces swords, with 8 animations and 9 skins'],
     ['NEW', 'Shutter-accurate motion blur, up to 32 sub-frames'],
@@ -176,28 +178,30 @@
       updateLaunchSub();
     } else P.toast('Offline', 'Could not load the version list from Mojang. Check your connection.', 'error', '!');
     const info = await native.info();
-    U.$('#gameDirLine').textContent = 'Game folder: ' + info.gameDir;
+    U.$('#gameDirLine').textContent = 'Game folder: ' + info.gameDir + ' (each version + loader gets its own instance folder for mods, config and saves)';
     // POISON in-game badge: the bundled mod targets one game version with Fabric
     const badge = U.$('#poisonBadge');
+    const supported = Array.isArray(info.poisonFor) ? info.poisonFor : info.poisonFor ? [info.poisonFor] : [];
     const syncBadge = () => {
-      if (!info.poisonFor) { badge.hidden = true; return; }
-      const on = P.state.profile.version === info.poisonFor && U.$('#loaderSelect').value === 'Fabric';
+      if (!supported.length) { badge.hidden = true; return; }
+      const on = supported.includes(P.state.profile.version) && U.$('#loaderSelect').value === 'Fabric';
       badge.hidden = false;
       badge.classList.toggle('on', on);
       badge.innerHTML = on
-        ? `<i>☠</i> POISON in-game client <b>ON</b>: menu, HUD, motion blur, knife, chams, music`
-        : `<i>○</i> POISON in-game needs <b>${info.poisonFor} + Fabric</b>. <button type="button" class="link-btn" id="poisonSwitch">switch</button>`;
-      const sw = U.$('#poisonSwitch');
-      if (sw) sw.addEventListener('click', () => {
-        if (![...vs.options].some((o) => o.value === info.poisonFor)) vs.insertAdjacentHTML('afterbegin', `<option>${info.poisonFor}</option>`);
-        vs.value = info.poisonFor; U.$('#loaderSelect').value = 'Fabric';
-        P.state.profile.version = info.poisonFor; P.state.profile.loader = 'Fabric'; P.save(); updateLaunchSub(); syncBadge(); P.sfx('on');
-      });
+        ? `<i>☠</i> POISON in-game client <b>ON</b> (${P.state.profile.version}): menu, glow HUD, effects, knife, chams, music`
+        : `<i>○</i> POISON in-game needs <b>${supported.join(' or ')} + Fabric</b>: ` +
+          supported.map((v) => `<button type="button" class="link-btn" data-switch="${v}">switch to ${v}</button>`).join(' ');
+      U.$$('[data-switch]', badge).forEach((sw) => sw.addEventListener('click', () => {
+        const v = sw.dataset.switch;
+        if (![...vs.options].some((o) => o.value === v)) vs.insertAdjacentHTML('afterbegin', `<option>${v}</option>`);
+        vs.value = v; U.$('#loaderSelect').value = 'Fabric';
+        P.state.profile.version = v; P.state.profile.loader = 'Fabric'; P.save(); updateLaunchSub(); syncBadge(); P.sfx('on');
+      }));
     };
     vs.addEventListener('change', syncBadge);
     U.$('#loaderSelect').addEventListener('change', syncBadge);
     syncBadge();
-    U.$$('[data-folder]').forEach((b) => b.addEventListener('click', () => native.openFolder(b.dataset.folder)));
+    U.$$('[data-folder]').forEach((b) => b.addEventListener('click', () => native.openFolder(b.dataset.folder, P.state.profile.version, U.$('#loaderSelect').value)));
     native.onExit(({ code }) => {
       P.toast('Minecraft closed', code ? `Exit code ${code}. Open the game folder, then logs, for details.` : 'See you next session', code ? 'error' : 'off', code ? '!' : '☠');
       if (pausedForGame && P.music) { P.music.resume(); pausedForGame = false; }

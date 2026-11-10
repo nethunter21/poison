@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "poison",
+  "version": "${version}",
+  "name": "POISON Client (1.8.9)",
+  "description": "Legit PvP client for 1.8.9: client menu, glow HUD, motion blur, butterfly knife, 1.7 animations, visual effects, music.",
+  "authors": ["POISON"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": { "client": ["gg.poison.legacy.PoisonLegacy"] },
+  "mixins": ["poison.mixins.json"],
+  "depends": { "fabricloader": ">=0.14.0", "minecraft": "1.8.9" }
+}

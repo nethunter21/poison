@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const MOD_DIR = path.resolve(__dirname, '..', '..', 'mod');
+const LEGACY_DIR = path.resolve(__dirname, '..', '..', 'mod-1.8.9');
 const OUT = path.resolve(__dirname, '..', 'build', 'mods');
 const FABRIC_API = '0.119.4+1.21.4';
 const API_URL = `https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FABRIC_API}/fabric-api-${encodeURIComponent(FABRIC_API)}.jar`;
@@ -21,7 +22,8 @@ async function get(url) {
   const gradlew = path.join(MOD_DIR, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   console.log('• building POISON mod');
   execFileSync(gradlew, ['build', '--no-daemon', '-q'], { cwd: MOD_DIR, stdio: 'inherit', shell: process.platform === 'win32' });
-  const jar = fs.readdirSync(path.join(MOD_DIR, 'build', 'libs')).find((f) => /^poison-client-[\d.]+\.jar$/.test(f));
+  const newest = (dir, re) => fs.readdirSync(dir).filter((f) => re.test(f)).sort((a, b) => fs.statSync(path.join(dir, b)).mtimeMs - fs.statSync(path.join(dir, a)).mtimeMs)[0];
+  const jar = newest(path.join(MOD_DIR, 'build', 'libs'), /^poison-client-[\d.]+\.jar$/);
   if (!jar) throw new Error('mod jar not found');
   fs.copyFileSync(path.join(MOD_DIR, 'build', 'libs', jar), path.join(OUT, 'poison-client.jar'));
   console.log('  ✓', jar);
@@ -35,6 +37,21 @@ async function get(url) {
     if (crypto.createHash('sha1').update(buf).digest('hex') !== want) throw new Error('Fabric API checksum mismatch');
     fs.writeFileSync(apiPath, buf);
   }
-  fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify({ minecraft: '1.21.4', fabricApi: FABRIC_API, mod: jar }, null, 2));
   console.log('  ✓ fabric-api', FABRIC_API);
+
+  // 1.8.9 (Legacy Fabric) — dependency-free, mixins only
+  console.log('• building POISON 1.8.9 mod');
+  const gradlewLegacy = path.join(LEGACY_DIR, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
+  execFileSync(gradlewLegacy, ['build', '--no-daemon', '-q'], { cwd: LEGACY_DIR, stdio: 'inherit', shell: process.platform === 'win32' });
+  const legacyJar = newest(path.join(LEGACY_DIR, 'build', 'libs'), /^poison-client-1\.8\.9-[\d.]+\.jar$/);
+  if (!legacyJar) throw new Error('1.8.9 mod jar not found');
+  fs.copyFileSync(path.join(LEGACY_DIR, 'build', 'libs', legacyJar), path.join(OUT, 'poison-client-1.8.9.jar'));
+  console.log('  ✓', legacyJar);
+
+  fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify({
+    mods: {
+      '1.21.4': { jar: 'poison-client.jar', api: 'fabric-api.jar', loader: 'fabric', fabricApi: FABRIC_API },
+      '1.8.9': { jar: 'poison-client-1.8.9.jar', loader: 'legacyfabric' },
+    },
+  }, null, 2));
 })().catch((e) => { console.error(e); process.exit(1); });
