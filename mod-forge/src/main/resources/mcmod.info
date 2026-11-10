@@ -1,0 +1,8 @@
+[{
+  "modid": "poison",
+  "name": "POISON Client",
+  "description": "Legit PvP client: glow HUD, effects, motion blur, butterfly knife, 1.7 animations, music.",
+  "version": "${version}",
+  "mcversion": "1.8.9",
+  "authorList": ["POISON"]
+}]

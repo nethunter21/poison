@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.7",
+  "package": "gg.poison.forge.mixin",
+  "refmap": "mixins.poison.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "client": []
+}
